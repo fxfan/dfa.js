@@ -17,12 +17,12 @@
 }
 </style>
 
-<input type="text" name="expr" size="50">
-<input id="parseButton" type="button" value="解析">
+<input type="text" name="expr" size="50" value="(12.3e+45 * x) / (67 + 89)">
+<input id="parseButton" type="button" value="Parse">
 <div id="console"></div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-<script src="lib/dfa.js"></script>
+<script src="../src/xfan.dfa.js"></script>
 <script>
 $(function() {
   
