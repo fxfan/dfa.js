@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+
+<meta charset="utf-8">
+<title>dfa.js sample</title>
+<style>
+#console {
+  padding: 10px;
+}
+#console p {
+  margin: 5px 0;
+  padding: 0;
+  font-family: "Courier New", monospace;
+}
+#console p strong {
+  font-weight: bold;
+  color: #dc143c;
+}
+</style>
+
+<input type="text" name="expr" size="50">
+<input id="parseButton" type="button" value="解析">
+<div id="console"></div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="lib/dfa.js"></script>
+<script>
+$(function() {
+  
+  var CharLabel = xfan.dfa.CharLabel;
+  var Edge = xfan.dfa.Edge;
+  var State = xfan.dfa.State;
+  
+  var space = new CharLabel.Include(" \t\r\n");
+  var digit = new CharLabel.Range("0", "9");
+  var lower = new CharLabel.Range("a", "z");
+  var upper = new CharLabel.Range("A", "Z");
+  var letter = new CharLabel.Or(lower, upper);
+  var letterAndDigit = new CharLabel.Or(lower, upper, digit);
+  var e = new CharLabel.Include("Ee");
+  var sign = new CharLabel.Include("+-");
+  
+  var dfa = new xfan.dfa.DFA();
+  
+  // initial state
+  var edges = [];
+  edges.push(new Edge(new CharLabel.Single("+"), 10));
+  edges.push(new Edge(new CharLabel.Single("-"), 20));
+  edges.push(new Edge(new CharLabel.Single("*"), 30));
+  edges.push(new Edge(new CharLabel.Single("/"), 40));
+  edges.push(new Edge(new CharLabel.Single("("), 50));
+  edges.push(new Edge(new CharLabel.Single(")"), 60));
+  edges.push(new Edge(digit, 70));
+  edges.push(new Edge(letter, 80));
+  edges.push(new Edge(space, 90));
+  dfa.addStartState(new State(1, edges));
+  
+  // operators and brackets
+  dfa.addState(new State(10, [], "OP_ADD"));
+  dfa.addState(new State(20, [], "OP_SUBTRACT"));
+  dfa.addState(new State(30, [], "OP_MULTIPLY"));
+  dfa.addState(new State(40, [], "OP_DIVIDE"));
+  dfa.addState(new State(50, [], "BRACKET_OPEN"));
+  dfa.addState(new State(60, [], "BRACKET_CLOSE"));
+  
+  // number literal /\d+(\.\d*)?((e|E)(+|-)?\d+)?/
+  edges = [];
+  edges.push(new Edge(digit, 70));
+  edges.push(new Edge(new CharLabel.Single("."), 71));
+  edges.push(new Edge(e, 72));
+  dfa.addState(new State(70, edges, "NUMBER_LITERAL"));
+  
+  edges = [];
+  edges.push(new Edge(digit, 71));
+  edges.push(new Edge(e, 72));
+  dfa.addState(new State(71, edges, "NUMBER_LITERAL"));
+  
+  edges = [];
+  edges.push(new Edge(sign, 73));
+  edges.push(new Edge(digit, 74));
+  dfa.addState(new State(72, edges));
+  
+  edges = [];
+  edges.push(new Edge(digit, 74));
+  dfa.addState(new State(73, edges));
+
+  edges = [];
+  edges.push(new Edge(digit, 74));
+  dfa.addState(new State(74, edges, "NUMBER_LITERAL"));
+  
+  // variable identifier /\w[\w\d]*/
+  edges = [];
+  edges.push(new Edge(letterAndDigit, 80));
+  dfa.addState(new State(80, edges, "VARIABLE"));
+  
+  // white spaces /\s+/
+  edges = [];
+  edges.push(new Edge(space, 90));
+  dfa.addState(new State(90, edges, "WHITE_SPACE"));
+  
+  $("#parseButton").bind("click", function() {
+    var expr = $("[name='expr']").val();
+    if (expr === "") {
+      return;
+    }
+    $("#console").empty();
+    var input = new xfan.dfa.CharInputSequence(expr);
+    var parser = new xfan.dfa.Parser(dfa, input);
+    while (parser.hasNext()) {
+      var token = parser.next();
+      var msg = "Token is found: '<strong>" + token.lexis + "</strong>' [" + token.obj + "]";
+      $("#console").append($("<p>").html(msg));
+    }
+  });
+  
+});
+</script>
