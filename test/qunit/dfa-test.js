@@ -130,12 +130,6 @@ test("isEdgeExists() returns true when edges is a non empty array", function() {
   equal(state.isEdgeExists(), true);
 });
 
-// a state has two edges and the input matches second edge
-// transit returns true and after that the current state equals with
-
-// a state has two edges and the input doesnt match eny edge
-// transit returns false and after that the current is still a state one.
-
 module("xfan.dfa.DFA", {
   setup : function() {
 
