@@ -1,6 +1,6 @@
 # dfa.js
 
-The javascript class library that models DFA(Deterministic Finite Automaton)
+A javascript class library that models DFA(Deterministic Finite Automaton)
 
 ## How to use
 Please see the examples as a reference.
