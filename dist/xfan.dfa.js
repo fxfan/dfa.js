@@ -1,4 +1,4 @@
-/*! xfan.dfa - v0.1.0 - 2012-11-10
+/*! xfan.dfa - v0.1.0 - 2012-12-05
 * https://github.com/fxfan/dfa.js
 * Copyright (c) 2012 xfan; Licensed MIT */
 
@@ -121,31 +121,13 @@ var xfan = xfan || {};
       }
     }),
 
-    Complex : Class.create("CharLabel.Complex").extend(CharLabel).define({
-      initialize : function(labels) {
-        this.includes = [];
-        this.excludes = [];
-        for ( var i = 0; i < labels.length; i++) {
-          var label = labels[i];
-          if (label instanceof CharLabel.Range || label instanceof CharLabel.Include) {
-            this.includes.push(label);
-          } else if (label instanceof CharLabel.Exclude) {
-            this.excludes.push(label);
-          } else if (label instanceof CharLabel.Single) {
-            throw "CharLabel.Single can't constitute a Complex object";
-          } else {
-            throw "unknown label class: " + label.className;
-          }
-        }
+    Or : Class.create("Charlabel.Or").extend(CharLabel).define({
+      initialize : function() {
+        this.labels = Array.prototype.slice.call(arguments);
       },
       match : function(input) {
-        for ( var i = 0; i < this.excludes.length; i++) {
-          if (!this.excludes[i].match(input)) {
-            return false;
-          }
-        }
-        for ( var i = 0; i < this.includes.length; i++) {
-          if (this.includes[i].match(input)) {
+        for ( var i = 0; i < this.labels.length; i++) {
+          if (this.labels[i].match(input)) {
             return true;
           }
         }
@@ -173,7 +155,7 @@ var xfan = xfan || {};
     },
 
     getAcceptedObject : function() {
-      return this.obj;
+      return this.obj || null;
     },
 
     isAcceptable : function() {
@@ -181,7 +163,7 @@ var xfan = xfan || {};
     },
 
     isEdgeExists : function() {
-      return this.edges.length !== 0;
+      return this.edges !== null && this.edges !== undefined && this.edges.length !== 0;
     }
   });
 
@@ -258,12 +240,11 @@ var xfan = xfan || {};
       this.str = str;
       this.nextLexis = "";
       this.forwardingPointer = 0;
-      this.beginningPointer = 0;
       this.enableUnget = false;
     },
 
     get : function() {
-      if (this.forwardingPointer >= this.str.length) {
+      if (!this.hasNext()) {
         return null;
       }
       var ch = this.str.charAt(this.forwardingPointer++);
@@ -282,7 +263,6 @@ var xfan = xfan || {};
     },
 
     findLexis : function() {
-      this.beginningPointer = this.forwardingPointer;
       this.enableUnget = false;
       var lexis = this.nextLexis;
       this.nextLexis = "";
