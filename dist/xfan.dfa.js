@@ -1,4 +1,4 @@
-/*! xfan.dfa - v0.1.0 - 2012-12-05
+/*! xfan.dfa - v0.1.0 - 2012-12-06
 * https://github.com/fxfan/dfa.js
 * Copyright (c) 2012 xfan; Licensed MIT */
 
