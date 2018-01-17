@@ -5,63 +5,7 @@ var State = xfan.dfa.State;
 var DFA = xfan.dfa.DFA;
 var CharInputSequence = xfan.dfa.CharInputSequence;
 
-test("CharInput#val()", function() {
-  var input = new CharInput("a");
-  equal(input.val(), "a");
-});
-
-test("CharInput.create(string)", function() {
-  var inputs = CharInput.create("abc");
-  equal(inputs.length, 3);
-  equal(inputs[0].val(), "a");
-  equal(inputs[1].val(), "b");
-  equal(inputs[2].val(), "c");
-});
-
-test("CharLabel.Single#match(input)", function() {
-  var label = new CharLabel.Single("a");
-  ok(label.match(new CharInput("a")));
-  ok(!label.match(new CharInput("b")));
-});
-
-test("CharLabel.Range#match(input)", function() {
-  var label = new CharLabel.Range("c", "x");
-  ok(!label.match(new CharInput("b")));
-  ok(label.match(new CharInput("c")));
-  ok(label.match(new CharInput("x")));
-  ok(!label.match(new CharInput("y")));
-});
-
-test("CharLabel.Include#match(input)", function() {
-  var label = new CharLabel.Include("246");
-  ok(!label.match(new CharInput("1")));
-  ok(label.match(new CharInput("2")));
-  ok(!label.match(new CharInput("3")));
-  ok(label.match(new CharInput("4")));
-  ok(!label.match(new CharInput("5")));
-});
-
-test("CharLabel.Exclude#match(input)", function() {
-  var label = new CharLabel.Exclude("246");
-  ok(label.match(new CharInput("1")));
-  ok(!label.match(new CharInput("2")));
-  ok(label.match(new CharInput("3")));
-  ok(!label.match(new CharInput("4")));
-  ok(label.match(new CharInput("5")));
-});
-
-test("CharLabel.Or#match(input)", function() {
-  var digit = new CharLabel.Range("0", "9");
-  var zero = new CharLabel.Single("0");
-  var abc = new CharLabel.Include("abc");
-  var e = new CharLabel.Single("e");
-  var label = new CharLabel.Or(digit, zero, abc, e);
-  ok(label.match(new CharInput("0")));
-  ok(label.match(new CharInput("9")));
-  ok(label.match(new CharInput("a")));
-  ok(!label.match(new CharInput("d")));
-  ok(label.match(new CharInput("e")));
-});
+// TODO: Move to test.coffee
 
 test("Edge#tryTransition(input,session)", function() {
   var a = new CharLabel.Single("a");
