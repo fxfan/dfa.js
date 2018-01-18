@@ -1,4 +1,4 @@
-const dfalib = require("../dfa-lib.js");
+const dfalib = require("../dfa.js");
 
 const CharLabel = dfalib.CharLabel;
 const Edge = dfalib.Edge;
