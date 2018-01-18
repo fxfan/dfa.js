@@ -98,7 +98,7 @@ class State {
   constructor(num, edges, obj) {
     this.num = num;
     this.edges = edges || [];
-    this.obj = obj || null;
+    this.obj = obj === undefined ? null : obj;
   }
 
   getAcceptedObject() {
@@ -173,7 +173,7 @@ class Transition {
 
   getAcceptedObject() {
     if (!this.isAcceptable()) {
-      throw "current is not an accept state";
+      throw "current state is not acceptable";
     }
     return this.current.getAcceptedObject();
   }
