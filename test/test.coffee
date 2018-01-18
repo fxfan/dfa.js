@@ -1,6 +1,6 @@
 chai = require 'chai'
 should = require 'should'
-dfalib = require '../dfa-lib'
+dfalib = require '../dfa'
 
 assert = chai.assert
 CharInput = dfalib.CharInput

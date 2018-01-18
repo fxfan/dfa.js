@@ -3,7 +3,7 @@ babel = require 'gulp-babel'
 uglify = require 'gulp-uglify'
 
 gulp.task 'build', (done)->
-  gulp.src 'src/dfa-lib.js'
+  gulp.src 'src/dfa.js'
     .pipe babel({presets:['env']})
     .pipe uglify()
     .pipe gulp.dest('.')
