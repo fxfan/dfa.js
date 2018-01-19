@@ -130,6 +130,10 @@ class DFA {
     this.states[state.num] = state;
   }
 
+  getStateByNum(num) {
+    return this.states[num];
+  }
+
   startNewTransition() {
     if (this.start === null) {
       throw "Start state isn't set";
