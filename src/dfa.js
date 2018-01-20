@@ -1,7 +1,5 @@
 "use strict"
 
-const i = require("immutable");
-
 class Input {
   val() {
     throw "Input#val() must be implemented by subclasses";
