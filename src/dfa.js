@@ -98,6 +98,9 @@ class Edge {
   tryTransition(input, session) {
     return this.label.match(input, session) ? this.dest : null;
   }
+  changeDest(dest) {
+    return new Edge(this.label, dest);
+  }
 }
 
 class State {
@@ -120,6 +123,75 @@ class State {
   isEdgeExists() {
     return this.edges.length > 0;
   }
+
+  addEdges(edges) {
+    return new State(this.num, this.edges.concat(edges), this.obj);
+  }
+
+  changeEdgesDest(from, to) {
+    if (this.edges.some(e => e.dest === from)) {
+      return new State(this.num, this.edges.map(e => e.dest === from ? e.changeDest(to) : e), this.obj);
+    } else {
+      return this;
+    }
+  }
+}
+
+class Fragment {
+
+  constructor(states) {
+    if (!Array.isArray(states) || states.length === 0) {
+      throw "Parameter 'states' must be a non-empty array";
+    }
+    this.states = Object.freeze(states.slice());
+    return Object.freeze(this);
+  }
+
+  get head() {
+    return this.states[0];
+  }
+
+  get tail() {
+    return this.states.slice(1);
+  }
+
+  get init() {
+    return this.states.slice(0, -1);
+  }
+
+  get last() {
+    return this.states[this.states.length - 1];
+  }
+
+  get headEdges() {
+    return this.states[0].edges;
+  }
+
+  concat(o) {
+    return new Fragment(this.init.concat(this.last.addEdges(o.headEdges)).concat(o.tail));
+  }
+
+  // Merges two Fragments.
+  // The fragment created by merging accepts both inputs that are accepted by each fragments.
+  // TODO: merging two fragments that have the same label on their first edges are not supported.
+  merge(o) {
+    const states = o.states.slice(1, -1).reduce((states, s)=> states.concat(s.changeEdgesDest(o.last.num, this.last.num)), this.init);
+    states[0] = states[0].addEdges(o.headEdges);
+    states.push(this.last);
+    return new Fragment(states);
+  }
+
+  static concatAll(fragments) {
+    fragments = fragments.slice();
+    const first = fragments.shift();
+    return fragments.reduce((base, frag)=> base.concat(frag), first);
+  }
+
+  static mergeAll(fragments) {
+    fragments = fragments.slice();
+    const first = fragments.shift();
+    return fragments.reduce((base, frag)=> base.merge(frag), first);
+  }
 }
 
 class DFA {
@@ -139,7 +211,17 @@ class DFA {
   }
 
   getStateByNum(num) {
-    return this.states[num];
+    return this.states[num] === undefined ? null : this.states[num];
+  }
+
+  appendFragment(fragment, stateNum) {
+    const state = this.getStateByNum(stateNum);
+    const newState = state.addEdges(fragment.headEdges);
+    this.addState(newState);
+    if (this.start === state) {
+      this.start = newState;
+    }
+    fragment.tail.forEach(s => this.addState(s));
   }
 
   startNewTransition() {
@@ -295,6 +377,7 @@ module.exports = {
   CharLabel : CharLabel,
   Edge : Edge,
   State : State,
+  Fragment: Fragment,
   DFA : DFA,
   Transition : Transition,
   CharInputSequence : CharInputSequence,

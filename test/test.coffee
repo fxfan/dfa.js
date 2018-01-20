@@ -7,6 +7,7 @@ CharInput = dfalib.CharInput
 CharLabel = dfalib.CharLabel
 Edge = dfalib.Edge
 State = dfalib.State
+Fragment = dfalib.Fragment
 DFA = dfalib.DFA
 CharInputSequence = dfalib.CharInputSequence
 
@@ -194,6 +195,7 @@ describe 'State', ->
       assert.isTrue state.isEdgeExists()
       done()
 
+
 describe 'DFA', ->
 
   dfa = new DFA()
@@ -220,6 +222,29 @@ describe 'DFA', ->
   state3 = new State 3, edges
   dfa.addState state3
 
+  describe 'appendFragment(fragment, stateNum)', ->
+    frag = new Fragment [
+      new State(100, [ new Edge new CharLabel.Single('h'), 101 ])
+      new State(101, [ new Edge new CharLabel.Single('i'), 102 ])
+      new State(102, [], 'HI!')
+    ]
+    hi = new DFA()
+    hi.addStartState new State(0)
+    hi.appendFragment frag, 0
+    it 'should append all states except the head to dfa and replace the start state', (done)->
+      assert.strictEqual hi.start.num, 0
+      assert.isNotNull hi.getStateByNum(0)
+      assert.isNotNull hi.getStateByNum(101)
+      assert.isNotNull hi.getStateByNum(102)
+      assert.isTrue hi.start.edges[0].label.match(new CharInput 'h')
+      trans = hi.startNewTransition()
+      assert.strictEqual trans.current, hi.start
+      assert.isTrue trans.transit new CharInput('h')
+      assert.isTrue trans.transit new CharInput('i')
+      assert.isTrue trans.isAcceptable()
+      assert.isFalse trans.isEdgeExists()
+      assert.strictEqual trans.getAcceptedObject(), 'HI!'
+      done()
   describe 'startNewTransition()', ->
     it 'should be done successfully', (done)->
       trans = dfa.startNewTransition()
@@ -258,6 +283,130 @@ describe 'DFA', ->
         trans.getAcceptedObject()
       , /is not acceptable/
       done()
+
+
+describe 'Fragment', ->
+
+  ho = new Fragment([
+    new State(100, [ new Edge new CharLabel.Single('h'), 101 ])
+    new State(101, [ new Edge new CharLabel.Single('o'), 102 ])
+    new State(102, [], 'HO!')
+  ]);
+
+  ge = new Fragment([
+    new State(200, [ new Edge new CharLabel.Single('g'), 201 ])
+    new State(201, [ new Edge new CharLabel.Single('e'), 202 ])
+    new State(202, [], 'GE!')
+  ]);
+
+  pi = new Fragment([
+    new State(300, [ new Edge new CharLabel.Single('p'), 301 ])
+    new State(301, [ new Edge new CharLabel.Single('i'), 302 ])
+    new State(302, [], 'PI!')
+  ]);
+
+  describe 'constructor(states)', ->
+    it 'should return an immutable', (done)->
+      assert.throws -> ho.states = []
+      assert.throws -> ho.states.push new State(300)
+      done()
+  describe 'head', ->
+    it 'should return the first element of states', (done)->
+      assert.strictEqual ho.head.num, 100
+      done()
+  describe 'tail', ->
+    it 'should return all states except the first', (done)->
+      assert.strictEqual ho.tail.length, 2
+      assert.strictEqual ho.tail[0].num, 101
+      assert.strictEqual ho.tail[1].num, 102
+      done()
+  describe 'init', ->
+    it 'should return all states except the last', (done)->
+      assert.strictEqual ho.init.length, 2
+      assert.strictEqual ho.init[0].num, 100
+      assert.strictEqual ho.init[1].num, 101
+      done()
+  describe 'last', ->
+    it 'should return the last element of states', (done)->
+      assert.strictEqual ho.last.num, 102
+      done()
+  describe 'concat', ->
+    frag = ho.concat ge
+    dfa = new DFA()
+    dfa.addStartState new State(0)
+    dfa.appendFragment frag, 0
+    it 'should return new Fragment that accepts inputs "hoge"', (done)->
+      assert.strictEqual frag.head, ho.head
+      assert.strictEqual frag.last, ge.last
+      trans = dfa.startNewTransition()
+      assert.isTrue trans.transit new CharInput('h')
+      assert.isTrue trans.transit new CharInput('o')
+      assert.isTrue trans.transit new CharInput('g')
+      assert.isTrue trans.transit new CharInput('e')
+      assert.isTrue trans.isAcceptable()
+      assert.isFalse trans.isEdgeExists()
+      assert.strictEqual trans.getAcceptedObject(), 'GE!'
+      done()
+  describe 'merge', ->
+    frag = ho.merge ge
+    dfa = new DFA()
+    dfa.addStartState new State(0)
+    dfa.appendFragment frag, 0
+    it 'should return new Fragment that accepts inputs "ho" or "ge"', (done)->
+      assert.strictEqual frag.head.num, ho.head.num
+      assert.strictEqual frag.last, ho.last
+      trans = dfa.startNewTransition()
+      assert.isTrue trans.transit new CharInput('h')
+      assert.isTrue trans.transit new CharInput('o')
+      assert.isTrue trans.isAcceptable()
+      assert.isFalse trans.isEdgeExists()
+      assert.strictEqual trans.getAcceptedObject(), 'HO!'
+      trans = dfa.startNewTransition()
+      assert.isTrue trans.transit new CharInput('g')
+      assert.isTrue trans.transit new CharInput('e')
+      assert.isTrue trans.isAcceptable()
+      assert.isFalse trans.isEdgeExists()
+      assert.strictEqual trans.getAcceptedObject(), 'HO!'
+      done()
+  describe 'concatAll', ->
+    frag = Fragment.concatAll [ho, ge, pi]
+    dfa = new DFA()
+    dfa.addStartState new State(0)
+    dfa.appendFragment frag, 0
+    it 'should return new Fragment that accepts inputs "hogepi"', (done)->
+      assert.strictEqual frag.head, ho.head
+      assert.strictEqual frag.last, pi.last
+      trans = dfa.startNewTransition()
+      assert.isTrue trans.transit new CharInput('h')
+      assert.isTrue trans.transit new CharInput('o')
+      assert.isTrue trans.transit new CharInput('g')
+      assert.isTrue trans.transit new CharInput('e')
+      assert.isTrue trans.transit new CharInput('p')
+      assert.isTrue trans.transit new CharInput('i')
+      assert.isTrue trans.isAcceptable()
+      assert.isFalse trans.isEdgeExists()
+      assert.strictEqual trans.getAcceptedObject(), 'PI!'
+      done()
+  describe 'mergeAll', ->
+    frag = Fragment.mergeAll [ho, ge, pi]
+    dfa = new DFA()
+    dfa.addStartState new State(0)
+    dfa.appendFragment frag, 0
+    it 'should return new Fragment that accepts inputs "ho" or "ge" or "pi"', (done)->
+      trans = dfa.startNewTransition()
+      assert.isTrue trans.transit new CharInput('h')
+      assert.isTrue trans.transit new CharInput('o')
+      assert.strictEqual trans.getAcceptedObject(), 'HO!'
+      trans = dfa.startNewTransition()
+      assert.isTrue trans.transit new CharInput('g')
+      assert.isTrue trans.transit new CharInput('e')
+      assert.strictEqual trans.getAcceptedObject(), 'HO!'
+      trans = dfa.startNewTransition()
+      assert.isTrue trans.transit new CharInput('p')
+      assert.isTrue trans.transit new CharInput('i')
+      assert.strictEqual trans.getAcceptedObject(), 'HO!'
+      done()
+
 
 describe 'CharInputSequence', ->
   
