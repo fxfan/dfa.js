@@ -1,6 +1,6 @@
 chai = require 'chai'
 should = require 'should'
-dfalib = require '../dfa'
+dfalib = require '../src/dfa.js'
 
 assert = chai.assert
 CharInput = dfalib.CharInput
@@ -12,6 +12,12 @@ CharInputSequence = dfalib.CharInputSequence
 
 
 describe 'CharInput', ->
+  describe 'constructor()', ->
+    it 'should return an immutable', (done)->
+      input = new CharInput 'a'
+      assert.throws -> input.ch = 'b'
+      assert.strictEqual input.val(), 'a'
+      done()
   describe 'val()', ->
     it 'should return the char which is passed to constructor', (done)->
       input = new CharInput 'a'
@@ -27,25 +33,44 @@ describe 'CharInput', ->
       done()
 
 
-describe 'CharLabel', ->
-  describe 'Single#match(input)', ->
+describe 'CharLabel.Single', ->
+  label = new CharLabel.Single 'a'
+  describe 'constructor()', ->
+    it 'should return an immutable', (done)->
+      assert.throws -> label.ch = 'b'
+      done()
+  describe 'match(input)', ->
     it 'should only match the specified char', (done)->
-      label = new CharLabel.Single 'a'
       assert.isOk label.match(new CharInput 'a')
       assert.isNotOk label.match(new CharInput 'b')
       done()
-  describe 'Range#match(input)', ->
+
+
+describe 'CharLabel.Range', ->
+  label = new CharLabel.Range 'c', 'e'
+  describe 'constructor(first, end)', ->
+    it 'should return an immutable', (done)->
+      assert.throws -> label.first = 'f'
+      assert.throws -> label.end = 'g'
+      done()
+  describe 'match(input)', ->
     it 'should match the letters in the range', (done)->
-      label = new CharLabel.Range 'c', 'e'
       assert.isNotOk label.match(new CharInput 'b')
       assert.isOk label.match(new CharInput 'c')
       assert.isOk label.match(new CharInput 'd')
       assert.isOk label.match(new CharInput 'e')
       assert.isNotOk label.match(new CharInput 'f')
       done()
-  describe 'Include#match(input)', ->
+
+
+describe 'CharLabel.Include', ->
+  label = new CharLabel.Include '246'
+  describe 'constructor(chars)', ->
+    it 'should return an immutable', (done)->
+      assert.throws -> label.chars = '135'
+      done()
+  describe 'match(input)', ->
     it 'should match the letters which the label includes', (done)->
-      label = new CharLabel.Include '246'
       assert.isNotOk label.match(new CharInput '1')
       assert.isOk label.match(new CharInput '2')
       assert.isNotOk label.match(new CharInput '3')
@@ -54,9 +79,16 @@ describe 'CharLabel', ->
       assert.isOk label.match(new CharInput '6')
       assert.isNotOk label.match(new CharInput '7')
       done()
-  describe 'Exclude#match(input)', ->
+
+
+describe 'CharLabel.Exclude', ->
+  label = new CharLabel.Exclude '246'
+  describe 'constructor(chars)', ->
+    it 'should return an immutable', (done)->
+      assert.throws -> label.chars = '135'
+      done()
+  describe 'match(input)', ->
     it 'should match the letters which the label doesnot exclude', (done)->
-      label = new CharLabel.Exclude '246'
       assert.isOk label.match(new CharInput '1')
       assert.isNotOk label.match(new CharInput '2')
       assert.isOk label.match(new CharInput '3')
@@ -65,13 +97,21 @@ describe 'CharLabel', ->
       assert.isNotOk label.match(new CharInput '6')
       assert.isOk label.match(new CharInput '7')
       done()
-  describe 'Or#match(input)', ->
+
+
+describe 'CharLabel.Or', ->
+  digit = new CharLabel.Range '0', '9'
+  zero = new CharLabel.Single '0'
+  abc = new CharLabel.Include 'abc'
+  e = new CharLabel.Single 'e'
+  label = new CharLabel.Or digit, zero, abc, e
+  describe 'constructor(chars)', ->
+    it 'should return an immutable', (done)->
+      assert.throws -> label.labels = []
+      assert.throws -> label.labels.push(new CharLabel.Single '-')
+      done()
+  describe 'match(input)', ->
     it 'should match the letters which are matched one of specified labels', (done)->
-      digit = new CharLabel.Range '0', '9'
-      zero = new CharLabel.Single '0'
-      abc = new CharLabel.Include 'abc'
-      e = new CharLabel.Single 'e'
-      label = new CharLabel.Or digit, zero, abc, e
       assert.isOk label.match(new CharInput '0')
       assert.isOk label.match(new CharInput '9')
       assert.isOk label.match(new CharInput 'a')
@@ -81,10 +121,15 @@ describe 'CharLabel', ->
 
 
 describe 'Edge', ->
+  a = new CharLabel.Single 'a'
+  edge = new Edge a, 2
+  describe 'constructor(label, dest)', ->
+    it 'should return an immutable', (done)->
+      assert.throws -> edge.labe = new CharLabel.Single 'b'
+      assert.throws -> edge.dest = 3
+      done()
   describe 'tryTransition(input,session)', ->
     it 'should succeed to transit for correct inputs', (done)->
-      a = new CharLabel.Single 'a'
-      edge = new Edge a, 2
       assert.strictEqual edge.tryTransition(new CharInput 'a'), 2
       assert.isNull edge.tryTransition(new CharInput 'b')
       done()
@@ -95,6 +140,15 @@ describe 'State', ->
   a = new CharLabel.Single 'a'
   edge = new Edge a, 2
 
+  describe 'constructor(num, edges, obj)', ->
+    it 'should return an immutable', (done)->
+      state = new State 1, [ edge ], { name: 'hoge' }
+      assert.throws -> state.num = 2
+      assert.throws -> state.edges = []
+      assert.throws -> state.edges.push new Edge new CharLabel.Single('b'), 3
+      assert.throws -> state.obj = { name: 'piyo' }
+      assert.throws -> state.obj.name = 'piyo'
+      done()
   describe 'getAcceptedObject()', ->
     it 'should return accepted object', (done)->
       obj = {}

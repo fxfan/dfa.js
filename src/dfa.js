@@ -1,5 +1,7 @@
 "use strict"
 
+const i = require("immutable");
+
 class Input {
   val() {
     throw "Input#val() must be implemented by subclasses";
@@ -11,6 +13,7 @@ class CharInput extends Input {
   constructor(ch) {
     super();
     this.ch = ch;
+    return Object.freeze(this);
   }
 
   val() {
@@ -36,6 +39,7 @@ CharLabel.Single = class extends CharLabel {
   constructor(ch) {
     super();
     this.ch = ch;
+    return Object.freeze(this);
   }
   match(input) {
     return input.val() === this.ch;
@@ -47,6 +51,7 @@ CharLabel.Range = class extends CharLabel {
     super();
     this.first = first;
     this.end = end;
+    return Object.freeze(this);
   }
   match(input) {
     return input.val() >= this.first && input.val() <= this.end;
@@ -57,6 +62,7 @@ CharLabel.Include = class extends CharLabel {
   constructor(chars) {
     super();
     this.chars = chars;
+    return Object.freeze(this);
   }
   match(input) {
     return this.chars.includes(input.val());
@@ -67,6 +73,7 @@ CharLabel.Exclude = class extends CharLabel {
   constructor(chars) {
     super();
     this.chars = chars;
+    return Object.freeze(this);
   }
   match(input) {
     return !this.chars.includes(input.val());
@@ -76,7 +83,8 @@ CharLabel.Exclude = class extends CharLabel {
 CharLabel.Or = class extends CharLabel {
   constructor() {
     super();
-    this.labels = Array.prototype.slice.call(arguments);
+    this.labels = Object.freeze(Array.prototype.slice.call(arguments));
+    return Object.freeze(this);
   }
   match(input) {
     return this.labels.some(l => l.match(input));
@@ -87,6 +95,7 @@ class Edge {
   constructor(label, dest) {
     this.label = label;
     this.dest = dest;
+    return Object.freeze(this);
   }
   tryTransition(input, session) {
     return this.label.match(input, session) ? this.dest : null;
@@ -97,8 +106,9 @@ class State {
 
   constructor(num, edges, obj) {
     this.num = num;
-    this.edges = edges || [];
-    this.obj = obj === undefined ? null : obj;
+    this.edges = Object.freeze(edges ? edges.slice() : []);
+    this.obj = obj === undefined ? null : Object.freeze(obj);
+    return Object.freeze(this);
   }
 
   getAcceptedObject() {
