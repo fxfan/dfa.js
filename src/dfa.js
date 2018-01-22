@@ -149,14 +149,21 @@ CharLabel.Or = class CharLabel_Or extends CharLabel {
 }
 
 class Edge {
+
   constructor(label, dest) {
     this.label = label;
     this.dest = dest;
     return Object.freeze(this);
   }
+  
+  hasSameLabelWith(edge) {
+    return this.label.equals(edge.label);
+  }
+
   tryTransition(input, session) {
     return this.label.match(input, session) ? this.dest : null;
   }
+
   changeDest(dest) {
     return new Edge(this.label, dest);
   }
@@ -169,6 +176,16 @@ class State {
     this.edges = Object.freeze(edges ? edges.slice() : []);
     this.obj = obj === undefined ? null : Object.freeze(obj);
     return Object.freeze(this);
+  }
+
+  hasEpsilonMove() {
+    return this.edges.some(e => e.label.equals(Label.E));
+  }
+
+  hasDuplicateEdge() {
+    const set = new Set();
+    this.edges.forEach(e => set.add(e.label.toString()));
+    return set.size < this.edges.length;
   }
 
   getAcceptedObject() {
@@ -261,11 +278,17 @@ class DFA {
   }
 
   addStartState(state) {
+    this.addState(state);
     this.start = state;
-    this.states[state.num] = state;
   }
 
   addState(state) {
+    if (state.hasEpsilonMove()) {
+      throw "The state has e-move";
+    }
+    if (state.hasDuplicateEdge()) {
+      throw "The state has duplicate edge";
+    }
     this.states[state.num] = state;
   }
 

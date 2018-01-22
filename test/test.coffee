@@ -213,6 +213,13 @@ describe 'Edge', ->
       assert.throws -> edge.labe = new CharLabel.Single 'b'
       assert.throws -> edge.dest = 3
       done()
+  describe 'hasSameLabelWith(edge)', ->
+    it 'should return true if "edge" has the same label', (done)->
+      assert.isTrue edge.hasSameLabelWith new Edge(new CharLabel.Single('a'), 4)
+      done();
+    it 'should return false if "edge" has a different label', (done)->
+      assert.isFalse edge.hasSameLabelWith new Edge(new CharLabel.Single('b'), 2)
+      done();
   describe 'tryTransition(input,session)', ->
     it 'should succeed to transit for correct inputs', (done)->
       assert.strictEqual edge.tryTransition(new CharInput 'a'), 2
@@ -233,6 +240,23 @@ describe 'State', ->
       assert.throws -> state.edges.push new Edge new CharLabel.Single('b'), 3
       assert.throws -> state.obj = { name: 'piyo' }
       assert.throws -> state.obj.name = 'piyo'
+      done()
+  describe 'hasEpsilonMove()', =>
+    it 'should return the value indicates if the state has edges with Label.E', (done)->
+      e1 = new Edge(new CharLabel.Single('a'), 2)
+      e2 = new Edge(Label.E, 4)
+      assert.isTrue (new State 1, [ e1, e2 ]).hasEpsilonMove()
+      assert.isTrue (new State 1, [ e2 ]).hasEpsilonMove()
+      assert.isFalse (new State 1, [ e1 ]).hasEpsilonMove()
+      done()
+  describe 'hasDuplicateEdge()', =>
+    it 'should return the value indicates if the state has edges with the same label', (done)->
+      e1 = new Edge(new CharLabel.Single('a'), 2)
+      e2 = new Edge(new CharLabel.Single('a'), 4)
+      e3 = new Edge(new CharLabel.Single('b'), 2)
+      assert.isTrue (new State 1, [ e1, e2, e3 ]).hasDuplicateEdge()
+      assert.isTrue (new State 1, [ e1, e2 ]).hasDuplicateEdge()
+      assert.isFalse (new State 1, [ e1, e3 ]).hasDuplicateEdge()
       done()
   describe 'getAcceptedObject()', ->
     it 'should return accepted object', (done)->
@@ -306,6 +330,32 @@ describe 'DFA', ->
   state3 = new State 3, edges
   dfa.addState state3
 
+  describe 'addStartState(state)', ->
+    it 'should add the state as the start state', (done)->
+      d = new DFA()
+      assert.doesNotThrow -> d.addStartState new State(1, edges)
+      assert.isNotNull d.getStateByNum(1)
+      assert.strictEqual d.start.num, 1
+      done()
+  describe 'addState(state)', ->
+    it 'should add the state', (done)->
+      d = new DFA()
+      assert.doesNotThrow -> d.addState new State(1, edges)
+      assert.isNotNull d.getStateByNum(1)
+      done()
+    it 'should throw an error if the state has e-move', (done)->
+      e = new Edge(Label.E, 3)
+      d = new DFA()
+      assert.throws -> d.addState new State(1, [e])
+      assert.isNull d.getStateByNum(1)
+      done()
+    it 'should throw an error if the state has duplicate edges', (done)->
+      e1 = new Edge(new CharLabel.Single('a'), 3)
+      e2 = new Edge(new CharLabel.Single('a'), 4)
+      d = new DFA()
+      assert.throws -> d.addState new State(1, [e1, e2])
+      assert.isNull d.getStateByNum(1)
+      done()
   describe 'appendFragment(fragment, stateNum)', ->
     frag = new Fragment [
       new State(100, [ new Edge new CharLabel.Single('h'), 101 ])
