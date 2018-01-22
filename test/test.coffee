@@ -35,6 +35,18 @@ describe 'CharInput', ->
       done()
 
 
+describe 'Label.E', ->
+  e = Label.E;
+  describe 'match(input)', ->
+    it 'should return false for any inputs', (done)->
+      assert.isFalse e.match new CharInput('e')
+      done()
+  describe 'equals(label)', ->
+    it 'should return true when comparing to itself', (done)->
+      assert.isTrue e.equals Label.E
+      done()
+
+
 class CharLabelSingleFake extends CharLabel
   constructor: (ch)->
     super()

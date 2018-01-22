@@ -32,6 +32,16 @@ class Label {
   }
 }
 
+class Epsilon extends Label {
+  match(input) {
+    return false;
+  }
+  equals(label) {
+    return this === label;
+  }
+}
+Label.E = new Epsilon();
+
 class CharLabel extends Label {
 
 }
