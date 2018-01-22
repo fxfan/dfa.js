@@ -5,6 +5,7 @@ dfalib = require '../src/dfa.js'
 assert = chai.assert
 CharInput = dfalib.CharInput
 CharLabel = dfalib.CharLabel
+Label = dfalib.Label
 Edge = dfalib.Edge
 State = dfalib.State
 Fragment = dfalib.Fragment
@@ -34,6 +35,16 @@ describe 'CharInput', ->
       done()
 
 
+class CharLabelSingleFake extends CharLabel
+  constructor: (ch)->
+    super()
+    @ch = ch
+    Object.freeze this
+  match: (input)->
+    input.val() == @ch;
+  equals: (label)->
+    @constructor.name == label.constructor.name && @ch == label.ch
+
 describe 'CharLabel.Single', ->
   label = new CharLabel.Single 'a'
   describe 'constructor()', ->
@@ -45,7 +56,28 @@ describe 'CharLabel.Single', ->
       assert.isOk label.match(new CharInput 'a')
       assert.isNotOk label.match(new CharInput 'b')
       done()
+  describe 'equals(label)', ->
+    it 'should return true when comparing to another CharLabel.Single with the same ch', (done)->
+      assert.isTrue label.equals new CharLabel.Single 'a'
+      done()
+    it 'should return false when comparing to another CharLabel.Single with a different ch', (done)->
+      assert.isFalse label.equals new CharLabel.Single 'b'
+      done()
+    it 'should return false when comparing to an object of another class', (done)->
+      assert.isFalse label.equals new CharLabelSingleFake 'a'
+      done()
 
+
+class CharLabelRangeFake extends CharLabel
+  constructor: (first, end)->
+    super()
+    @first = first
+    @end = end
+    Object.freeze this
+  match: (input)->
+    input.val() >= @first && input.val() <= @end;
+  equals: (label)->
+    @constructor.name == label.constructor.name && @first == label.first && @end == label.end;
 
 describe 'CharLabel.Range', ->
   label = new CharLabel.Range 'c', 'e'
@@ -61,6 +93,16 @@ describe 'CharLabel.Range', ->
       assert.isOk label.match(new CharInput 'd')
       assert.isOk label.match(new CharInput 'e')
       assert.isNotOk label.match(new CharInput 'f')
+      done()
+  describe 'equals(label)', ->
+    it 'should return true when comparing to another CharLabel.Range with the same first and end', (done)->
+      assert.isTrue label.equals new CharLabel.Range 'c', 'e'
+      done()
+    it 'should return false when comparing to another CharLabel.Range with a different first or end', (done)->
+      assert.isFalse label.equals new CharLabel.Range 'c', 'f'
+      done()
+    it 'should return false when comparing to an object of another class', (done)->
+      assert.isFalse label.equals new CharLabelRangeFake 'c', 'e'
       done()
 
 
@@ -80,6 +122,16 @@ describe 'CharLabel.Include', ->
       assert.isOk label.match(new CharInput '6')
       assert.isNotOk label.match(new CharInput '7')
       done()
+  describe 'equals(label)', ->
+    it 'should return true when comparing to another CharLabel.Include with the same chars', (done)->
+      assert.isTrue label.equals new CharLabel.Include '246'
+      done()
+    it 'should return false when comparing to another CharLabel.Include with a different chars', (done)->
+      assert.isFalse label.equals new CharLabel.Include '245'
+      done()
+    it 'should return false when comparing to an object of another class', (done)->
+      assert.isFalse label.equals new CharLabel.Exclude '246'
+      done()
 
 
 describe 'CharLabel.Exclude', ->
@@ -97,6 +149,16 @@ describe 'CharLabel.Exclude', ->
       assert.isOk label.match(new CharInput '5')
       assert.isNotOk label.match(new CharInput '6')
       assert.isOk label.match(new CharInput '7')
+      done()
+  describe 'equals(label)', ->
+    it 'should return true when comparing to another CharLabel.Exclude with the same chars', (done)->
+      assert.isTrue label.equals new CharLabel.Exclude '246'
+      done()
+    it 'should return false when comparing to another CharLabel.Exclude with a different chars', (done)->
+      assert.isFalse label.equals new CharLabel.Exclude '245'
+      done()
+    it 'should return false when comparing to an object of another class', (done)->
+      assert.isFalse label.equals new CharLabel.Include '246'
       done()
 
 
@@ -118,6 +180,16 @@ describe 'CharLabel.Or', ->
       assert.isOk label.match(new CharInput 'a')
       assert.isNotOk label.match(new CharInput 'd')
       assert.isOk label.match(new CharInput 'e')
+      done()
+  describe 'equals(label)', ->
+    it 'should return true when comparing to another CharLabel.Exclude with the same labels', (done)->
+      assert.isTrue label.equals new CharLabel.Or digit, zero, abc, e
+      done()
+    it 'should return false when comparing to another CharLabel.Exclude with a different labels', (done)->
+      assert.isFalse label.equals new CharLabel.Or digit, zero, abc
+      done()
+    it 'should return false when comparing to an object of another class', (done)->
+      assert.isFalse label.equals new CharLabel.Include '246'
       done()
 
 

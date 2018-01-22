@@ -27,13 +27,16 @@ class Label {
   match(input) {
     throw "Label#match(input) must be implemented by subclasses";
   }
+  equals(label) {
+    throw "Label#equals(label) must be implemented by subclasses";
+  }
 }
 
 class CharLabel extends Label {
 
 }
 
-CharLabel.Single = class extends CharLabel {
+CharLabel.Single = class CharLabel_Single extends CharLabel {
   constructor(ch) {
     super();
     this.ch = ch;
@@ -42,9 +45,16 @@ CharLabel.Single = class extends CharLabel {
   match(input) {
     return input.val() === this.ch;
   }
+  equals(label) {
+    return this.constructor.name === label.constructor.name 
+      && this.ch === label.ch;
+  }
+  toString() {
+    return `CharLabel.Single[ch=${this.ch}]`;
+  }
 }
 
-CharLabel.Range = class extends CharLabel {
+CharLabel.Range = class CharLabel_Range extends CharLabel {
   constructor(first, end) {
     super();
     this.first = first;
@@ -54,9 +64,17 @@ CharLabel.Range = class extends CharLabel {
   match(input) {
     return input.val() >= this.first && input.val() <= this.end;
   }
+  equals(label) {
+    return this.constructor.name === label.constructor.name 
+      && this.first === label.first
+      && this.end === label.end;
+  }
+  toString() {
+    return `CharLabel.Range[first=${this.first},end=${this.end}]`;
+  }
 }
 
-CharLabel.Include = class extends CharLabel {
+CharLabel.Include = class CharLabel_Include extends CharLabel {
   constructor(chars) {
     super();
     this.chars = chars;
@@ -65,9 +83,16 @@ CharLabel.Include = class extends CharLabel {
   match(input) {
     return this.chars.includes(input.val());
   }
+  equals(label) {
+    return this.constructor.name === label.constructor.name 
+      && this.chars === label.chars;
+  }
+  toString() {
+    return `CharLabel.Include[chars=${this.chars}]`;
+  }
 }
 
-CharLabel.Exclude = class extends CharLabel {
+CharLabel.Exclude = class CharLabel_Exclude extends CharLabel {
   constructor(chars) {
     super();
     this.chars = chars;
@@ -76,16 +101,40 @@ CharLabel.Exclude = class extends CharLabel {
   match(input) {
     return !this.chars.includes(input.val());
   }
+  equals(label) {
+    return this.constructor.name === label.constructor.name 
+      && this.chars === label.chars;
+  }
+  toString() {
+    return `CharLabel.Exclude[chars=${this.chars}]`;
+  }
 }
 
-CharLabel.Or = class extends CharLabel {
+CharLabel.Or = class CharLabel_Or extends CharLabel {
   constructor() {
     super();
-    this.labels = Object.freeze(Array.prototype.slice.call(arguments));
+    this.labels = Object.freeze(Array.prototype.slice.call(arguments).sort());
     return Object.freeze(this);
   }
   match(input) {
     return this.labels.some(l => l.match(input));
+  }
+  equals(label) {
+    if (this.constructor.name !== label.constructor.name) {
+      return false;
+    }
+    if (this.labels.length !== label.labels.length) {
+      return false;
+    }
+    for (let i = 0; i < this.labels; i++) {
+      if (!this.labels[i].match(label.labels[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  toString() {
+    return `CharLabel.Or[labels=${this.labels.join(',')}]`;
   }
 }
 
