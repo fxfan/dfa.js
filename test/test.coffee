@@ -324,7 +324,7 @@ describe 'NFA', ->
     new Edge(Label.E, 6)
   ]
   nfa.addState new State 4, [
-    new Edge(new CharLabel.Single('b'), 3)
+    new Edge(new CharLabel.Single('b'), 5)
   ]
   nfa.addState new State 5, [
     new Edge(Label.E, 6)
@@ -410,6 +410,64 @@ describe 'NFA', ->
       ]
       nexts = nfa.move states, new CharLabel.Single('a')
       assert.strictEqual nexts.length, 0
+      done()
+  describe 'startNewTransition()', ->
+    it 'should be done successfully', (done)->
+      trans = nfa.startNewTransition()
+      assert.isNotNull trans
+      assert.strictEqual trans.constructor.name, 'NFATransition'
+      done()
+    it 'should fail without start state in the NFA', (done)->
+      assert.throws -> new NFA().startNewTransition()
+      done()
+  describe 'Transition#move(input)', ->
+    trans = nfa.startNewTransition()
+    it 'should move with input "b"', (done)->
+      assert.isTrue trans.move new CharInput('b')
+      console.log(trans.currents)
+      assert.strictEqual trans.currents.length, 6
+      assert.isTrue trans.currents.some((s)-> s.num == 1)
+      assert.isTrue trans.currents.some((s)-> s.num == 2)
+      assert.isTrue trans.currents.some((s)-> s.num == 4)
+      assert.isTrue trans.currents.some((s)-> s.num == 5)
+      assert.isTrue trans.currents.some((s)-> s.num == 6)
+      assert.isTrue trans.currents.some((s)-> s.num == 7)
+      assert.isFalse trans.isAcceptable()
+      assert.isTrue trans.isEdgeExists()
+      assert.throws ->
+        trans.getAcceptedObjects()
+      , /is not acceptable/
+      done()
+    it 'should move with input "a"(acceptable)', (done)->
+      assert.isTrue trans.move new CharInput('a')
+      assert.strictEqual trans.currents.length, 7
+      assert.isTrue trans.currents.some((s)-> s.num == 1)
+      assert.isTrue trans.currents.some((s)-> s.num == 2)
+      assert.isTrue trans.currents.some((s)-> s.num == 3)
+      assert.isTrue trans.currents.some((s)-> s.num == 4)
+      assert.isTrue trans.currents.some((s)-> s.num == 6)
+      assert.isTrue trans.currents.some((s)-> s.num == 7)
+      assert.isTrue trans.currents.some((s)-> s.num == 8)
+      assert.isTrue trans.isAcceptable()
+      assert.isTrue trans.isEdgeExists()
+      assert.strictEqual trans.getAcceptedObjects().length, 1
+      assert.isTrue trans.getAcceptedObjects().some((o)-> o == 'OK!')
+      done()
+    it 'should move with input "b" again(not acceptable)', (done)->
+      assert.isTrue trans.move new CharInput('b')
+      console.log(trans.currents)
+      assert.strictEqual trans.currents.length, 6
+      assert.isTrue trans.currents.some((s)-> s.num == 1)
+      assert.isTrue trans.currents.some((s)-> s.num == 2)
+      assert.isTrue trans.currents.some((s)-> s.num == 4)
+      assert.isTrue trans.currents.some((s)-> s.num == 5)
+      assert.isTrue trans.currents.some((s)-> s.num == 6)
+      assert.isTrue trans.currents.some((s)-> s.num == 7)
+      assert.isFalse trans.isAcceptable()
+      assert.isTrue trans.isEdgeExists()
+      assert.throws ->
+        trans.getAcceptedObjects()
+      , /is not acceptable/
       done()
 
 

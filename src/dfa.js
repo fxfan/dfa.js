@@ -376,16 +376,16 @@ class NFATransition {
 
   constructor(nfa) {
     this.nfa = nfa;
-    this.currents = [ nfa.start ];
+    this.currents = nfa.eClosure([nfa.start]);
   }
 
   move(input) {
-    this.currents = this.currents.reduce((newCurrents, state)=> state.edges
+    this.currents = this.nfa.eClosure(this.currents.reduce((newCurrents, state)=> state.edges
       .map(e => e.tryTransition(input))
       .filter(dest => dest !== null)
       .map(dest => this.nfa.getStateByNum(dest, `State ${dest}(linked from ${state.num}) not found`))
       .__dfajs_concatTo(newCurrents)
-    , []);
+    , []).__dfajs_uniq());
     return this.currents.length !== 0
   }
 
@@ -398,12 +398,13 @@ class NFATransition {
   }
 
   getAcceptedObjects() {
-    if (!this.isAcceptable()) {
-      throw "current state is not acceptable";
-    }
-    return this.currents
+    const objects = this.currents
       .filter(s => s.isAcceptable())
       .map(s => s.getAcceptedObject());
+    if (objects.length === 0) {
+      throw "current state is not acceptable";
+    }
+    return objects;
   }
 
   getCurrents() {
