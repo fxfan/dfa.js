@@ -387,7 +387,8 @@ class NFA {
       .map(e => _eclosure(this.getStateByNum(e.dest, `State ${e.dest}(linked from ${state.num}) not found`)))
       .__dfajs_flatten()
       .__dfajs_concatTo([state]);
-    return states.map(_eclosure)
+    return Object.keys(states)
+      .map(key => _eclosure(states[key]))
       .__dfajs_flatten()
       .__dfajs_uniq()
   }
