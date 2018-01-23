@@ -205,6 +205,10 @@ class Edge {
   changeDest(dest) {
     return new Edge(this.label, dest);
   }
+
+  toString() {
+    return `Edge(label=${this.label}, dest=${this.dest})`;
+  }
 }
 
 class State {
@@ -248,6 +252,10 @@ class State {
     } else {
       return this;
     }
+  }
+
+  toString() {
+    return `State(num=${this.num}, edges=${this.edges}, obj=${this.obj})`;
   }
 }
 
