@@ -424,7 +424,6 @@ describe 'NFA', ->
     trans = nfa.startNewTransition()
     it 'should move with input "b"', (done)->
       assert.isTrue trans.move new CharInput('b')
-      console.log(trans.currents)
       assert.strictEqual trans.currents.length, 6
       assert.isTrue trans.currents.some((s)-> s.num == 1)
       assert.isTrue trans.currents.some((s)-> s.num == 2)
@@ -455,7 +454,6 @@ describe 'NFA', ->
       done()
     it 'should move with input "b" again(not acceptable)', (done)->
       assert.isTrue trans.move new CharInput('b')
-      console.log(trans.currents)
       assert.strictEqual trans.currents.length, 6
       assert.isTrue trans.currents.some((s)-> s.num == 1)
       assert.isTrue trans.currents.some((s)-> s.num == 2)
