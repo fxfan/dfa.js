@@ -1,8 +1,39 @@
 "use strict"
 
-const flatten = (arrayOfArray)=> {
-  return Array.prototype.concat.apply([], arrayOfArray);
-};
+Object.defineProperties(Array.prototype, {
+  
+  "__dfajs_flatten": {
+    value: function() {
+      return Array.prototype.concat.apply([], this);
+    },
+    enumerable: false
+  },
+
+  "__dfajs_uniq": {
+    value: function() {
+      return this.filter((e, i, self)=> self.indexOf(e) === i);
+    },
+    enumerable: false
+  },
+
+  "__dfajs_uniqAsString": {
+    value: function() {
+      return this.map(e => [e, e.toString()])
+        .filter((tuple, i, self)=> self.findIndex(t => t[1] === tuple[1]) === i)
+        .map(t => t[0]);
+    },
+    enumerable: false
+  },
+
+  "__dfajs_concatTo": {
+    value: function(array) {
+      return array.concat(this);
+    },
+    enumerable: false
+  }
+
+});
+
 
 class Input {
   val() {
@@ -28,19 +59,11 @@ class CharInput extends Input {
 }
 
 class Label {
-  
   match(input) {
     throw "Label#match(input) must be implemented by subclasses";
   }
-  
   equals(label) {
     throw "Label#equals(label) must be implemented by subclasses";
-  }
-
-  // Get new label array that is excluded duplicates from labels
-  static uniq(labels) {
-    const strs = labels.map(l => l.toString());
-    return labels.filter((l, i)=> strs.indexOf(l.toString()) === i);
   }
 }
 
@@ -301,8 +324,15 @@ class NFA {
     this.states[state.num] = state;
   }
 
-  getStateByNum(num) {
-    return this.states[num] === undefined ? null : this.states[num];
+  getStateByNum(num, throwsMessage) {
+    const state = this.states[num];
+    if (state === undefined) {
+      if (throwsMessage) {
+        throw throwsMessage;
+      }
+      return null;
+    }
+    return state;
   }
 
   startNewTransition() {
@@ -314,50 +344,32 @@ class NFA {
 
   // Get a set of labels that are attached on the all edges in the NFA.
   getAllLabels() {
-    const labels = Object.keys(this.states)
-      .map(n => this.states[n].edges.map(e => e.label).filter(l => l !== Label.E));
-    return Label.uniq(flatten(labels));
+    return Object.keys(this.states)
+      .map(n => this.states[n].edges.map(e => e.label).filter(l => l !== Label.E))
+      .__dfajs_flatten()
+      .__dfajs_uniqAsString();
   }
   
   // Get a set of states where the passed 'states' can move to through ϵ transition.
   eClosure(states) {
-
-    const _eclosure = (state)=> {
-      const statesArray = state.edges
-        .filter(e => e.label === Label.E)
-        .map(e => {
-          const destState = this.getStateByNum(e.dest);
-          if (destState === null) {
-            throw `Illegal NFA structure: ${state.num} has an edge to ${e.dest} which doesn't exist`;
-          }
-          return _eclosure(destState);
-        });
-      return [state].concat(flatten(statesArray))
-    };
-
-    return flatten(states.map(_eclosure))
-      .filter((s, i, self)=> self.indexOf(s) === i);
+    const _eclosure = (state)=> state.edges
+      .filter(e => e.label === Label.E)
+      .map(e => _eclosure(this.getStateByNum(e.dest, `State ${e.dest}(linked from ${state.num}) not found`)))
+      .__dfajs_flatten()
+      .__dfajs_concatTo([state]);
+    return states.map(_eclosure)
+      .__dfajs_flatten()
+      .__dfajs_uniq()
   }
 
   // Get a set of states where the passed 'states' can move to through edges with passed 'label'.
   move(states, label) {
-
-    const nextStates = states.reduce((nextStates, state)=> {
-      const states = state.edges
-        .filter(e => e.label.equals(label))
-        .map(e => {
-          const destState = this.getStateByNum(e.dest);
-          if (destState === null) {
-            throw `Illegal NFA structure: ${state.num} has an edge to ${e.dest} which doesn't exist`;
-          }
-          return destState;
-        });
-      return nextStates.concat(states);
-    }, []);
-
-    return nextStates.filter((s, i, self)=> self.indexOf(s) === i);
+    return states.reduce((nextStates, state)=> state.edges
+      .filter(e => e.label.equals(label))
+      .map(e => this.getStateByNum(e.dest, `State ${e.dest}(linked from ${state.num}) not found`))
+      .__dfajs_concatTo(nextStates)
+    , []).__dfajs_uniq()
   }
-
 }
 
 class NFATransition {
@@ -368,19 +380,12 @@ class NFATransition {
   }
 
   move(input) {
-    this.currents = this.currents.reduce((newCurrents, state)=> {
-      const states = state.edges
-        .map(e => e.tryTransition(input))
-        .filter(dest => dest !== null)
-        .map(dest => {
-          const destState = this.nfa.getStateByNum(dest);
-          if (destState === null) {
-            throw `Moving failed due to illegal NFA structure: ${state.num} has an edge to ${dest} which doesn't exist`;
-          }
-          return destState;
-        });
-      return newCurrent.concat(states);
-    }, []);
+    this.currents = this.currents.reduce((newCurrents, state)=> state.edges
+      .map(e => e.tryTransition(input))
+      .filter(dest => dest !== null)
+      .map(dest => this.nfa.getStateByNum(dest, `State ${dest}(linked from ${state.num}) not found`))
+      .__dfajs_concatTo(newCurrents)
+    , []);
     return this.currents.length !== 0
   }
 
