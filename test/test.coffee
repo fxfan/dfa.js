@@ -411,6 +411,24 @@ describe 'NFA', ->
       nexts = nfa.move states, new CharLabel.Single('a')
       assert.strictEqual nexts.length, 0
       done()
+  describe 'toDFA()', ->
+    it 'should create a DFA that is compatible with the original NFA', (done)->
+      dfa = nfa.toDFA();
+      trans = dfa.startNewTransition();
+      assert.isTrue trans.transit new CharInput('b')
+      assert.isFalse trans.isAcceptable()
+      assert.isTrue trans.transit new CharInput('a')
+      assert.isTrue trans.isAcceptable()
+      assert.isTrue trans.transit new CharInput('a')
+      assert.isTrue trans.isAcceptable()
+      assert.isTrue trans.transit new CharInput('a')
+      assert.isTrue trans.isAcceptable()
+      assert.isTrue trans.transit new CharInput('b')
+      assert.isFalse trans.isAcceptable()
+      assert.isTrue trans.transit new CharInput('a')
+      assert.isTrue trans.isAcceptable()
+      assert.strictEqual trans.getAcceptedObject(), 'OK!'
+      done();
   describe 'startNewTransition()', ->
     it 'should be done successfully', (done)->
       trans = nfa.startNewTransition()

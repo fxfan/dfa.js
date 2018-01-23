@@ -338,6 +338,30 @@ class Fragment {
   }
 }
 
+
+class DTransRecord {
+
+  constructor(num, states, edges) {
+    this.num = num;
+    this.states = Object.freeze(states.slice().sort((s1, s2)=> s1.num - s2.num));
+    this.edges = Object.freeze(edges.slice());
+    return Object.freeze(this);
+  }
+
+  getKey() {
+    return DTransRecord.createKey(this.states);
+  }
+
+  addEdge(edge) {
+    return new DTransRecord(this.num, this.states, this.edges.concat(edge));
+  }
+
+  static createKey(states) {
+    return states.map(s => s.num).sort().toString();
+  }
+}
+
+
 class NFA {
 
   constructor() {
@@ -401,6 +425,53 @@ class NFA {
       .__dfajs_concatTo(nextStates)
     , []).__dfajs_uniq()
   }
+
+  toDFA() {
+
+    const seq = StateNumSequence.newSequence();
+    const labels = this.getAllLabels();
+
+    // Return a object in which a key is the string identifying a set of states 
+    // and its value is a corresponding DTransRecord object.
+    const _createTable = (states, table)=> {
+      return labels.reduce((table, label)=> {
+        const statesKey = DTransRecord.createKey(states);
+        const destStates = this.eClosure(this.move(states, label));
+        const destStatesKey = DTransRecord.createKey(destStates);
+        if (table[destStatesKey]) {
+          const edge = new Edge(label, table[destStatesKey].num);
+          return Object.assign({}, table, { [statesKey]: table[statesKey].addEdge(edge) })
+        } else {
+          const newRecord = new DTransRecord(seq.getNext(), destStates, []);
+          const edge = new Edge(label, newRecord.num);
+          table = Object.assign({}, table, { 
+            [statesKey]: table[statesKey].addEdge(edge), 
+            [destStatesKey]: newRecord
+          });
+          return _createTable(destStates, table);
+        }
+      }, table)
+    };
+
+    const states = this.eClosure([this.start]);
+    const record = new DTransRecord(seq.getNext(), states, []);
+    const startKey = record.getKey();
+    const table = _createTable(states, { [startKey]: record });
+
+    return Object.keys(table).reduce((dfa, key)=> {
+      const rec = table[key];
+      const objs = rec.states.filter(s => s.isAcceptable()).map(s => s.getAcceptedObject());
+      // TODO: Ambiguous specification about how to handle multiple accepted objects
+      const state = new State(rec.num, rec.edges, objs.length > 0 ? objs[0] : null);
+      if (key === startKey) {
+        dfa.addStartState(state);
+      } else {
+        dfa.addState(state);
+      }
+      return dfa;
+    }, new DFA());
+  }
+
 }
 
 class NFATransition {
