@@ -1,5 +1,9 @@
 "use strict"
 
+const flatten = (arrayOfArray)=> {
+  return Array.prototype.concat.apply([], arrayOfArray);
+};
+
 class Input {
   val() {
     throw "Input#val() must be implemented by subclasses";
@@ -24,11 +28,19 @@ class CharInput extends Input {
 }
 
 class Label {
+  
   match(input) {
     throw "Label#match(input) must be implemented by subclasses";
   }
+  
   equals(label) {
     throw "Label#equals(label) must be implemented by subclasses";
+  }
+
+  // Get new label array that is excluded duplicates from labels
+  static uniq(labels) {
+    const strs = labels.map(l => l.toString());
+    return labels.filter((l, i)=> strs.indexOf(l.toString()) === i);
   }
 }
 
@@ -38,6 +50,9 @@ class Epsilon extends Label {
   }
   equals(label) {
     return this === label;
+  }
+  toString() {
+    return "Label.E";
   }
 }
 Label.E = new Epsilon();
@@ -270,6 +285,127 @@ class Fragment {
   }
 }
 
+class NFA {
+
+  constructor() {
+    this.start = null;
+    this.states = {};
+  }
+
+  addStartState(state) {
+    this.addState(state);
+    this.start = state;
+  }
+
+  addState(state) {
+    this.states[state.num] = state;
+  }
+
+  getStateByNum(num) {
+    return this.states[num] === undefined ? null : this.states[num];
+  }
+
+  startNewTransition() {
+    if (this.start === null) {
+      throw "Start state isn't set";
+    }
+    return new NFATransition(this);
+  }
+
+  // Get a set of labels that are attached on the all edges in the NFA.
+  getAllLabels() {
+    const labels = Object.keys(this.states)
+      .map(n => this.states[n].edges.map(e => e.label).filter(l => l !== Label.E));
+    return Label.uniq(flatten(labels));
+  }
+  
+  // Get a set of states where the passed 'states' can move to through ϵ transition.
+  eClosure(states) {
+
+    const _eclosure = (state)=> {
+      const statesArray = state.edges
+        .filter(e => e.label === Label.E)
+        .map(e => {
+          const destState = this.getStateByNum(e.dest);
+          if (destState === null) {
+            throw `Illegal NFA structure: ${state.num} has an edge to ${e.dest} which doesn't exist`;
+          }
+          return _eclosure(destState);
+        });
+      return [state].concat(flatten(statesArray))
+    };
+
+    return flatten(states.map(_eclosure))
+      .filter((s, i, self)=> self.indexOf(s) === i);
+  }
+
+  // Get a set of states where the passed 'states' can move to through edges with passed 'label'.
+  move(states, label) {
+
+    const nextStates = states.reduce((nextStates, state)=> {
+      const states = state.edges
+        .filter(e => e.label.equals(label))
+        .map(e => {
+          const destState = this.getStateByNum(e.dest);
+          if (destState === null) {
+            throw `Illegal NFA structure: ${state.num} has an edge to ${e.dest} which doesn't exist`;
+          }
+          return destState;
+        });
+      return nextStates.concat(states);
+    }, []);
+
+    return nextStates.filter((s, i, self)=> self.indexOf(s) === i);
+  }
+
+}
+
+class NFATransition {
+
+  constructor(nfa) {
+    this.nfa = nfa;
+    this.currents = [ nfa.start ];
+  }
+
+  move(input) {
+    this.currents = this.currents.reduce((newCurrents, state)=> {
+      const states = state.edges
+        .map(e => e.tryTransition(input))
+        .filter(dest => dest !== null)
+        .map(dest => {
+          const destState = this.nfa.getStateByNum(dest);
+          if (destState === null) {
+            throw `Moving failed due to illegal NFA structure: ${state.num} has an edge to ${dest} which doesn't exist`;
+          }
+          return destState;
+        });
+      return newCurrent.concat(states);
+    }, []);
+    return this.currents.length !== 0
+  }
+
+  isAcceptable() {
+    return this.currents.some(s => s.isAcceptable());
+  }
+
+  isEdgeExists() {
+    return this.currents.some(s => s.isEdgeExists());
+  }
+
+  getAcceptedObjects() {
+    if (!this.isAcceptable()) {
+      throw "current state is not acceptable";
+    }
+    return this.currents
+      .filter(s => s.isAcceptable())
+      .map(s => s.getAcceptedObject());
+  }
+
+  getCurrents() {
+    return this.currents.slice();
+  }
+}
+
 class DFA {
 
   constructor() {
@@ -310,11 +446,11 @@ class DFA {
     if (this.start === null) {
       throw "Start state isn't set";
     }
-    return new Transition(this);
+    return new DFATransition(this);
   }
 }
 
-class Transition {
+class DFATransition {
 
   constructor(dfa) {
     this.dfa = dfa;
@@ -460,8 +596,8 @@ module.exports = {
   Edge : Edge,
   State : State,
   Fragment: Fragment,
+  NFA : NFA,
   DFA : DFA,
-  Transition : Transition,
   CharInputSequence : CharInputSequence,
   Token : Token,
   Parser : Parser

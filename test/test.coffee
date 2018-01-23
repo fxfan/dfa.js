@@ -9,6 +9,7 @@ Label = dfalib.Label
 Edge = dfalib.Edge
 State = dfalib.State
 Fragment = dfalib.Fragment
+NFA = dfalib.NFA
 DFA = dfalib.DFA
 CharInputSequence = dfalib.CharInputSequence
 
@@ -304,6 +305,114 @@ describe 'State', ->
       done()
 
 
+describe 'NFA', ->
+
+  # Regular expression: (a|b)*a
+  nfa = new NFA()
+  nfa.addStartState new State 0, [
+    new Edge(Label.E, 1)
+    new Edge(Label.E, 7)
+  ]
+  nfa.addState new State 1, [
+    new Edge(Label.E, 2)
+    new Edge(Label.E, 4)
+  ]
+  nfa.addState new State 2, [
+    new Edge(new CharLabel.Single('a'), 3)
+  ]
+  nfa.addState new State 3, [
+    new Edge(Label.E, 6)
+  ]
+  nfa.addState new State 4, [
+    new Edge(new CharLabel.Single('b'), 3)
+  ]
+  nfa.addState new State 5, [
+    new Edge(Label.E, 6)
+  ]
+  nfa.addState new State 6, [
+    new Edge(Label.E, 1)
+    new Edge(Label.E, 7)
+  ]
+  nfa.addState new State 7, [
+    new Edge(new CharLabel.Single('a'), 8)
+  ]
+  nfa.addState new State 8, [], 'OK!'
+
+  describe 'getAllLabels()', ->
+    it 'should return all labels in NFA except duplicates and Label.E', (done)->
+      labels = nfa.getAllLabels()
+      assert.strictEqual labels.length, 2
+      assert.isTrue labels[0].match(new CharInput('a'))
+      assert.isTrue labels[1].match(new CharInput('b'))
+      done()
+  describe 'eClosure(states)', ->
+    it 'should move through ε transition recursively', (done)->
+      states = [
+        nfa.getStateByNum 0
+      ]
+      nexts = nfa.eClosure states
+      assert.strictEqual nexts.length, 5
+      assert.isTrue nexts.some((s)-> s.num == 0)
+      assert.isTrue nexts.some((s)-> s.num == 1)
+      assert.isTrue nexts.some((s)-> s.num == 2)
+      assert.isTrue nexts.some((s)-> s.num == 4)
+      assert.isTrue nexts.some((s)-> s.num == 7)
+      done()
+    it 'should exclude duplicate states', (done)->
+      states = [
+        nfa.getStateByNum 1
+        nfa.getStateByNum 3
+        nfa.getStateByNum 5
+      ]
+      nexts = nfa.eClosure states
+      assert.strictEqual nexts.length, 7
+      assert.isTrue nexts.some((s)-> s.num == 1)
+      assert.isTrue nexts.some((s)-> s.num == 2)
+      assert.isTrue nexts.some((s)-> s.num == 3)
+      assert.isTrue nexts.some((s)-> s.num == 4)
+      assert.isTrue nexts.some((s)-> s.num == 5)
+      assert.isTrue nexts.some((s)-> s.num == 6)
+      assert.isTrue nexts.some((s)-> s.num == 7)
+      done()
+    it 'should not move through non-ε transition', (done)->
+      states = [
+        nfa.getStateByNum 2
+        nfa.getStateByNum 4
+      ]
+      nexts = nfa.eClosure states
+      assert.strictEqual nexts.length, 2
+      assert.isTrue nexts.some((s)-> s.num == 2)
+      assert.isTrue nexts.some((s)-> s.num == 4)
+      done()
+  describe 'move(states, label)', ->
+    it 'should move throught an edge with the specified label', (done)->
+      states = [
+        nfa.getStateByNum 2
+        nfa.getStateByNum 4
+      ]
+      nexts = nfa.move states, new CharLabel.Single('a')
+      assert.strictEqual nexts.length, 1
+      assert.isTrue nexts.some((s)-> s.num == 3)
+      done()
+    it 'should move throught multiple edges with the specified label', (done)->
+      states = [
+        nfa.getStateByNum 2
+        nfa.getStateByNum 7
+      ]
+      nexts = nfa.move states, new CharLabel.Single('a')
+      assert.strictEqual nexts.length, 2
+      assert.isTrue nexts.some((s)-> s.num == 3)
+      assert.isTrue nexts.some((s)-> s.num == 8)
+      done()
+    it 'should not move throught ε transition', (done)->
+      states = [
+        nfa.getStateByNum 1
+      ]
+      nexts = nfa.move states, new CharLabel.Single('a')
+      assert.strictEqual nexts.length, 0
+      done()
+
+
 describe 'DFA', ->
 
   dfa = new DFA()
@@ -383,7 +492,7 @@ describe 'DFA', ->
     it 'should be done successfully', (done)->
       trans = dfa.startNewTransition()
       assert.isNotNull trans
-      assert.instanceOf trans, dfalib.Transition
+      assert.strictEqual trans.constructor.name, 'DFATransition'
       done()
     it 'should fail without start state in the DFA', (done)->
       assert.throws -> new DFA().startNewTransition()
