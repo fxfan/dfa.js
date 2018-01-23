@@ -259,6 +259,28 @@ class State {
   }
 }
 
+class StateNumSequence {
+
+  static newSequence() {
+    if (this.seed === undefined) {
+      this.seed = 0;
+    }
+    return new StateNumSequence(++this.seed * 65536)
+  }
+
+  constructor(origin) {
+    this.origin = origin;
+    this.next = origin;
+  }
+
+  getNext() {
+    if (this.next > this.origin + 65535) {
+      throw `A sequence can only generate 65536 nums: ${this.origin} ~ ${this.origin + 65535}`;
+    }
+    return this.next++;
+  }
+}
+
 class Fragment {
 
   constructor(states) {
