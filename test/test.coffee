@@ -12,7 +12,7 @@ Fragment = dfalib.Fragment
 NFA = dfalib.NFA
 DFA = dfalib.DFA
 CharInputSequence = dfalib.CharInputSequence
-
+Regex = dfalib.Regex
 
 describe 'CharInput', ->
   describe 'constructor()', ->
@@ -810,3 +810,17 @@ describe 'CharInputSequence', ->
       assert.isFalse input.hasNext()
       done()
 
+describe 'Regex', ->
+  
+  describe 'toFragment()', ->
+    frag = new Regex('hi').toFragment()
+    nfa = new NFA();
+    nfa.addStartState new State(0, [])
+    nfa.appendFragment frag, 0
+    it 'should accept inputs "h" and "i"', (done)->
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isFalse trans.isAcceptable()
+      assert.isTrue trans.move new CharInput('i')
+      assert.isTrue trans.isAcceptable()
+      done()

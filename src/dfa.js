@@ -714,6 +714,34 @@ class Parser {
   }
 }
 
+class Regex {
+
+  constructor(expr) {
+    this.expr = expr;
+  }
+
+  toFragment() {
+    
+    // Any special char is not supported yet.
+    const seq = StateNumSequence.newSequence();
+    const last = new State(seq.getNext(), [], this.expr);
+
+    const states = this.expr.split("").reduce((states, ch) => {
+      const prevState = states[states.length - 1];
+      const nextState = new State(seq.getNext(), []);
+      const edge = new Edge(new CharLabel.Single(ch), nextState.num);
+      states[states.length - 1] = prevState.addEdges([edge]);
+      return states.concat(nextState)
+    }, [ new State(seq.getNext(), []) ]);
+
+    return new Fragment(
+      states.slice(0, -1)
+        .concat(states[states.length - 1].addEdges(new Edge(Label.E, last.num)))
+        .concat(last)
+    );
+  }
+}
+
 module.exports = {
   Input : Input,
   CharInput : CharInput,
@@ -726,5 +754,6 @@ module.exports = {
   DFA : DFA,
   CharInputSequence : CharInputSequence,
   Token : Token,
-  Parser : Parser
+  Parser : Parser,
+  Regex: Regex
 }
