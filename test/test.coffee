@@ -622,6 +622,12 @@ describe 'Fragment', ->
     new State(302, [], 'PI!')
   ]);
 
+  hi = new Fragment([
+    new State(400, [ new Edge new CharLabel.Single('h'), 401 ])
+    new State(401, [ new Edge new CharLabel.Single('i'), 402 ])
+    new State(402, [], 'HI!')
+  ]);
+
   describe 'constructor(states)', ->
     it 'should return an immutable', (done)->
       assert.throws -> ho.states = []
@@ -649,79 +655,91 @@ describe 'Fragment', ->
       done()
   describe 'concat', ->
     frag = ho.concat ge
-    dfa = new DFA()
-    dfa.addStartState new State(0)
-    dfa.appendFragment frag, 0
+    nfa = new NFA()
+    nfa.addStartState new State(0)
+    nfa.appendFragment frag, 0
     it 'should return new Fragment that accepts inputs "hoge"', (done)->
       assert.strictEqual frag.head, ho.head
       assert.strictEqual frag.last, ge.last
-      trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('h')
-      assert.isTrue trans.transit new CharInput('o')
-      assert.isTrue trans.transit new CharInput('g')
-      assert.isTrue trans.transit new CharInput('e')
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('o')
+      assert.isTrue trans.move new CharInput('g')
+      assert.isTrue trans.move new CharInput('e')
       assert.isTrue trans.isAcceptable()
       assert.isFalse trans.isEdgeExists()
       assert.strictEqual trans.getAcceptedObject(), 'GE!'
       done()
   describe 'merge', ->
     frag = ho.merge ge
-    dfa = new DFA()
-    dfa.addStartState new State(0)
-    dfa.appendFragment frag, 0
+    nfa = new NFA()
+    nfa.addStartState new State(0)
+    nfa.appendFragment frag, 0
     it 'should return new Fragment that accepts inputs "ho" or "ge"', (done)->
-      assert.strictEqual frag.head.num, ho.head.num
-      assert.strictEqual frag.last, ho.last
-      trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('h')
-      assert.isTrue trans.transit new CharInput('o')
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('o')
       assert.isTrue trans.isAcceptable()
-      assert.isFalse trans.isEdgeExists()
       assert.strictEqual trans.getAcceptedObject(), 'HO!'
-      trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('g')
-      assert.isTrue trans.transit new CharInput('e')
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('g')
+      assert.isTrue trans.move new CharInput('e')
       assert.isTrue trans.isAcceptable()
-      assert.isFalse trans.isEdgeExists()
+      assert.strictEqual trans.getAcceptedObject(), 'GE!'
+      done()
+    it 'should return new Fragment that accepts both inputs even they start with the same', (done)->
+      frag = ho.merge hi
+      nfa = new NFA()
+      nfa.addStartState new State(0)
+      nfa.appendFragment frag, 0
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('o')
+      assert.isTrue trans.isAcceptable()
       assert.strictEqual trans.getAcceptedObject(), 'HO!'
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('i')
+      assert.isTrue trans.isAcceptable()
+      assert.strictEqual trans.getAcceptedObject(), 'HI!'
       done()
   describe 'concatAll', ->
     frag = Fragment.concatAll [ho, ge, pi]
-    dfa = new DFA()
-    dfa.addStartState new State(0)
-    dfa.appendFragment frag, 0
+    nfa = new NFA()
+    nfa.addStartState new State(0)
+    nfa.appendFragment frag, 0
     it 'should return new Fragment that accepts inputs "hogepi"', (done)->
       assert.strictEqual frag.head, ho.head
       assert.strictEqual frag.last, pi.last
-      trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('h')
-      assert.isTrue trans.transit new CharInput('o')
-      assert.isTrue trans.transit new CharInput('g')
-      assert.isTrue trans.transit new CharInput('e')
-      assert.isTrue trans.transit new CharInput('p')
-      assert.isTrue trans.transit new CharInput('i')
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('o')
+      assert.isTrue trans.move new CharInput('g')
+      assert.isTrue trans.move new CharInput('e')
+      assert.isTrue trans.move new CharInput('p')
+      assert.isTrue trans.move new CharInput('i')
       assert.isTrue trans.isAcceptable()
       assert.isFalse trans.isEdgeExists()
       assert.strictEqual trans.getAcceptedObject(), 'PI!'
       done()
   describe 'mergeAll', ->
     frag = Fragment.mergeAll [ho, ge, pi]
-    dfa = new DFA()
-    dfa.addStartState new State(0)
-    dfa.appendFragment frag, 0
+    nfa = new NFA()
+    nfa.addStartState new State(0)
+    nfa.appendFragment frag, 0
     it 'should return new Fragment that accepts inputs "ho" or "ge" or "pi"', (done)->
-      trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('h')
-      assert.isTrue trans.transit new CharInput('o')
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('o')
       assert.strictEqual trans.getAcceptedObject(), 'HO!'
-      trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('g')
-      assert.isTrue trans.transit new CharInput('e')
-      assert.strictEqual trans.getAcceptedObject(), 'HO!'
-      trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('p')
-      assert.isTrue trans.transit new CharInput('i')
-      assert.strictEqual trans.getAcceptedObject(), 'HO!'
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('g')
+      assert.isTrue trans.move new CharInput('e')
+      assert.strictEqual trans.getAcceptedObject(), 'GE!'
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('p')
+      assert.isTrue trans.move new CharInput('i')
+      assert.strictEqual trans.getAcceptedObject(), 'PI!'
       done()
 
 

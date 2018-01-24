@@ -317,12 +317,8 @@ class Fragment {
 
   // Merges two Fragments.
   // The fragment created by merging accepts both inputs that are accepted by each fragments.
-  // TODO: merging two fragments that have the same label on their first edges are not supported.
   merge(o) {
-    const states = o.states.slice(1, -1).reduce((states, s)=> states.concat(s.changeEdgesDest(o.last.num, this.last.num)), this.init);
-    states[0] = states[0].addEdges(o.headEdges);
-    states.push(this.last);
-    return new Fragment(states);
+    return Fragment.mergeAll([ this, o ]);
   }
 
   static concatAll(fragments) {
@@ -332,9 +328,17 @@ class Fragment {
   }
 
   static mergeAll(fragments) {
-    fragments = fragments.slice();
-    const first = fragments.shift();
-    return fragments.reduce((base, frag)=> base.merge(frag), first);
+
+    const seq = StateNumSequence.newSequence();
+    const head = new State(seq.getNext(), fragments.map(f => new Edge(Label.E, f.head.num)));
+    const last = new State(seq.getNext(), []);
+
+    const states = [ head]
+      .concat(fragments.map(f => f.init.concat(f.last.addEdges([new Edge(Label.E, last.num)]))))
+      .concat(last)
+      .__dfajs_flatten()
+
+    return new Fragment(states);
   }
 }
 
@@ -387,6 +391,16 @@ class NFA {
       return null;
     }
     return state;
+  }
+
+  appendFragment(fragment, stateNum) {
+    const state = this.getStateByNum(stateNum);
+    const newState = state.addEdges([new Edge(Label.E, fragment.head.num)]);
+    this.addState(newState);
+    if (this.start === state) {
+      this.start = newState;
+    }
+    fragment.states.forEach(s => this.addState(s));
   }
 
   startNewTransition() {
@@ -507,6 +521,10 @@ class NFATransition {
       throw "current state is not acceptable";
     }
     return objects;
+  }
+
+  getAcceptedObject() {
+    return this.getAcceptedObjects()[0];
   }
 
   getCurrents() {
