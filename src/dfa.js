@@ -262,22 +262,22 @@ class State {
 class StateNumSequence {
 
   static newSequence() {
-    if (this.seed === undefined) {
-      this.seed = 0;
+    if (this._seed === undefined) {
+      this._seed = 0;
     }
-    return new StateNumSequence(++this.seed * 65536)
+    return new StateNumSequence(++this._seed * 65536)
   }
 
   constructor(origin) {
-    this.origin = origin;
-    this.next = origin;
+    this._origin = origin;
+    this._next = origin;
   }
 
-  getNext() {
-    if (this.next > this.origin + 65535) {
-      throw `A sequence can only generate 65536 nums: ${this.origin} ~ ${this.origin + 65535}`;
+  next() {
+    if (this._next > this._origin + 65535) {
+      throw `A sequence can only generate 65536 nums: ${this._origin} ~ ${this._origin + 65535}`;
     }
-    return this.next++;
+    return this._next++;
   }
 }
 
@@ -330,8 +330,8 @@ class Fragment {
   static mergeAll(fragments) {
 
     const seq = StateNumSequence.newSequence();
-    const head = new State(seq.getNext(), fragments.map(f => new Edge(Label.E, f.head.num)));
-    const last = new State(seq.getNext(), []);
+    const head = new State(seq.next(), fragments.map(f => new Edge(Label.E, f.head.num)));
+    const last = new State(seq.next(), []);
 
     const states = [ head]
       .concat(fragments.map(f => f.init.concat(f.last.addEdges([new Edge(Label.E, last.num)]))))
@@ -456,7 +456,7 @@ class NFA {
           const edge = new Edge(label, table[destStatesKey].num);
           return Object.assign({}, table, { [statesKey]: table[statesKey].addEdge(edge) })
         } else {
-          const newRecord = new DTransRecord(seq.getNext(), destStates, []);
+          const newRecord = new DTransRecord(seq.next(), destStates, []);
           const edge = new Edge(label, newRecord.num);
           table = Object.assign({}, table, { 
             [statesKey]: table[statesKey].addEdge(edge), 
@@ -468,7 +468,7 @@ class NFA {
     };
 
     const states = this.eClosure([this.start]);
-    const record = new DTransRecord(seq.getNext(), states, []);
+    const record = new DTransRecord(seq.next(), states, []);
     const startKey = record.getKey();
     const table = _createTable(states, { [startKey]: record });
 
@@ -724,15 +724,15 @@ class Regex {
     
     // Any special char is not supported yet.
     const seq = StateNumSequence.newSequence();
-    const last = new State(seq.getNext(), [], this.expr);
+    const last = new State(seq.next(), [], this.expr);
 
     const states = this.expr.split("").reduce((states, ch) => {
       const prevState = states[states.length - 1];
-      const nextState = new State(seq.getNext(), []);
+      const nextState = new State(seq.next(), []);
       const edge = new Edge(new CharLabel.Single(ch), nextState.num);
       states[states.length - 1] = prevState.addEdges([edge]);
       return states.concat(nextState)
-    }, [ new State(seq.getNext(), []) ]);
+    }, [ new State(seq.next(), []) ]);
 
     return new Fragment(
       states.slice(0, -1)
@@ -749,6 +749,7 @@ module.exports = {
   CharLabel : CharLabel,
   Edge : Edge,
   State : State,
+  StateNumSequence: StateNumSequence,
   Fragment: Fragment,
   NFA : NFA,
   DFA : DFA,
