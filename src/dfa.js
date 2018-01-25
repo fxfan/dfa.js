@@ -213,9 +213,11 @@ class Edge {
 
 class State {
 
-  constructor(num, edges, obj) {
+  constructor(num, edges = [], attrs = {}, acceptable = false, obj = null) {
     this.num = num;
     this.edges = Object.freeze(edges ? edges.slice() : []);
+    this.attrs = Object.freeze(attrs ? Object.assign({}, attrs) : {});
+    this.acceptable = !!acceptable;
     this.obj = obj === undefined ? null : Object.freeze(obj);
     return Object.freeze(this);
   }
@@ -235,27 +237,32 @@ class State {
   }
 
   isAcceptable() {
-    return this.obj !== null;
+    return this.acceptable;
   }
 
   isEdgeExists() {
     return this.edges.length > 0;
   }
 
+  toAcceptable(obj = null) {
+    return new State(this.num, this.edges, this.attrs, true, obj);
+  }
+
   addEdges(edges) {
-    return new State(this.num, this.edges.concat(edges), this.obj);
+    return new State(this.num, this.edges.concat(edges), this.attrs, this.acceptable, this.obj);
   }
 
   changeEdgesDest(from, to) {
     if (this.edges.some(e => e.dest === from)) {
-      return new State(this.num, this.edges.map(e => e.dest === from ? e.changeDest(to) : e), this.obj);
+      const newEdges = this.edges.map(e => e.dest === from ? e.changeDest(to) : e);
+      return new State(this.num, newEdges, this.attrs, this.acceptable, this.obj);
     } else {
       return this;
     }
   }
 
   toString() {
-    return `State(num=${this.num}, edges=${this.edges}, obj=${this.obj})`;
+    return `State(num=${this.num}, edges=${this.edges}, attrs=${this.attrs}, acceptable=${this.acceptable}, obj=${this.obj})`;
   }
 }
 
@@ -474,9 +481,16 @@ class NFA {
 
     return Object.keys(table).reduce((dfa, key)=> {
       const rec = table[key];
+      const attrs = rec.states.reduce((attrs, s)=> {
+        Object.keys(s.attrs).reduce((attrs, key)=> {
+          const values = (attrs[key] === undefined) ? [s.attrs[key]] : attrs[key].concat(s.attrs[key]);
+          return Object.assign({}, attrs, { [key]: Object.freeze(values) });
+        }, attrs);
+      }, {});
+      const acceptable = rec.states.some(s => s.isAcceptable());
       const objs = rec.states.filter(s => s.isAcceptable()).map(s => s.getAcceptedObject());
       // TODO: Ambiguous specification about how to handle multiple accepted objects
-      const state = new State(rec.num, rec.edges, objs.length > 0 ? objs[0] : null);
+      const state = new State(rec.num, rec.edges, attrs, acceptable, objs.length > 0 ? objs[0] : null);
       if (key === startKey) {
         dfa.addStartState(state);
       } else {
@@ -724,7 +738,7 @@ class Regex {
     
     // Any special char is not supported yet.
     const seq = StateNumSequence.newSequence();
-    const last = new State(seq.next(), [], this.expr);
+    const last = new State(seq.next(), []).toAcceptable(this.expr);
 
     const states = this.expr.split("").reduce((states, ch) => {
       const prevState = states[states.length - 1];

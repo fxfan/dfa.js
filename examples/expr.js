@@ -29,24 +29,24 @@ edges.push(new Edge(space, 90));
 dfa.addStartState(new State(1, edges));
 
 // operators and brackets
-dfa.addState(new State(10, [], "OP_ADD"));
-dfa.addState(new State(20, [], "OP_SUBTRACT"));
-dfa.addState(new State(30, [], "OP_MULTIPLY"));
-dfa.addState(new State(40, [], "OP_DIVIDE"));
-dfa.addState(new State(50, [], "BRACKET_OPEN"));
-dfa.addState(new State(60, [], "BRACKET_CLOSE"));
+dfa.addState(new State(10, []).toAcceptable("OP_ADD"));
+dfa.addState(new State(20, []).toAcceptable("OP_SUBTRACT"));
+dfa.addState(new State(30, []).toAcceptable("OP_MULTIPLY"));
+dfa.addState(new State(40, []).toAcceptable("OP_DIVIDE"));
+dfa.addState(new State(50, []).toAcceptable("BRACKET_OPEN"));
+dfa.addState(new State(60, []).toAcceptable("BRACKET_CLOSE"));
 
 // number literal /\d+(\.\d*)?((e|E)(+|-)?\d+)?/
 edges = [];
 edges.push(new Edge(digit, 70));
 edges.push(new Edge(new CharLabel.Single("."), 71));
 edges.push(new Edge(e, 72));
-dfa.addState(new State(70, edges, "NUMBER_LITERAL"));
+dfa.addState(new State(70, edges).toAcceptable("NUMBER_LITERAL"));
 
 edges = [];
 edges.push(new Edge(digit, 71));
 edges.push(new Edge(e, 72));
-dfa.addState(new State(71, edges, "NUMBER_LITERAL"));
+dfa.addState(new State(71, edges).toAcceptable("NUMBER_LITERAL"));
 
 edges = [];
 edges.push(new Edge(sign, 73));
@@ -59,17 +59,17 @@ dfa.addState(new State(73, edges));
 
 edges = [];
 edges.push(new Edge(digit, 74));
-dfa.addState(new State(74, edges, "NUMBER_LITERAL"));
+dfa.addState(new State(74, edges).toAcceptable("NUMBER_LITERAL"));
 
 // variable identifier /\w[\w\d]*/
 edges = [];
 edges.push(new Edge(letterAndDigit, 80));
-dfa.addState(new State(80, edges, "VARIABLE"));
+dfa.addState(new State(80, edges).toAcceptable("VARIABLE"));
 
 // white spaces /\s+/
 edges = [];
 edges.push(new Edge(space, 90));
-dfa.addState(new State(90, edges, "WHITE_SPACE"));
+dfa.addState(new State(90, edges).toAcceptable("WHITE_SPACE"));
 
 
 // Tokenize the expression: '(12.3e+45 * x) / (67 + 89)'

@@ -262,7 +262,7 @@ describe 'State', ->
   describe 'getAcceptedObject()', ->
     it 'should return accepted object', (done)->
       obj = {}
-      state = new State 1, [ edge ], obj
+      state = new State(1, [ edge ]).toAcceptable obj
       assert.strictEqual state.getAcceptedObject(), obj
       done()
     it 'should return null for undefined', (done)->
@@ -271,19 +271,19 @@ describe 'State', ->
       done()
   describe 'isAcceptable()', ->
     it 'should return false when obj is null', (done)->
-      state = new State 1, [ edge ], null
-      assert.isFalse state.isAcceptable()
+      state = new State(1, [ edge ]).toAcceptable null
+      assert.isTrue state.isAcceptable()
       done()
     it 'should return false when obj is undefined', (done)->
-      state = new State 1, [ edge ]
-      assert.isFalse state.isAcceptable()
+      state = new State(1, [ edge ]).toAcceptable()
+      assert.isTrue state.isAcceptable()
       done()
     it 'should return true when obj is ""', (done)->
-      state = new State 1, [ edge ], ''
+      state = new State(1, [ edge ]).toAcceptable ''
       assert.isTrue state.isAcceptable()
       done()
     it 'should return true when obj is 0', (done)->
-      state = new State 1, [ edge ], 0
+      state = new State(1, [ edge ]).toAcceptable 0
       assert.isTrue state.isAcceptable()
       done()
   describe 'isEdgeExists()', ->
@@ -336,7 +336,7 @@ describe 'NFA', ->
   nfa.addState new State 7, [
     new Edge(new CharLabel.Single('a'), 8)
   ]
-  nfa.addState new State 8, [], 'OK!'
+  nfa.addState new State(8, []).toAcceptable 'OK!'
 
   describe 'getAllLabels()', ->
     it 'should return all labels in NFA except duplicates and Label.E', (done)->
@@ -505,7 +505,7 @@ describe 'DFA', ->
 
   # add a state where the edge with label "b" is linked to.
   # this state is acceptable.
-  state2 = new State 2, [], obj
+  state2 = new State(2, []).toAcceptable obj
   dfa.addState state2
 
   # add a state where the edge with label "c" is linked to.
@@ -543,7 +543,7 @@ describe 'DFA', ->
     frag = new Fragment [
       new State(100, [ new Edge new CharLabel.Single('h'), 101 ])
       new State(101, [ new Edge new CharLabel.Single('i'), 102 ])
-      new State(102, [], 'HI!')
+      new State(102, []).toAcceptable 'HI!'
     ]
     hi = new DFA()
     hi.addStartState new State(0)
@@ -607,25 +607,25 @@ describe 'Fragment', ->
   ho = new Fragment([
     new State(100, [ new Edge new CharLabel.Single('h'), 101 ])
     new State(101, [ new Edge new CharLabel.Single('o'), 102 ])
-    new State(102, [], 'HO!')
+    new State(102, []).toAcceptable('HO!')
   ]);
 
   ge = new Fragment([
     new State(200, [ new Edge new CharLabel.Single('g'), 201 ])
     new State(201, [ new Edge new CharLabel.Single('e'), 202 ])
-    new State(202, [], 'GE!')
+    new State(202, []).toAcceptable('GE!')
   ]);
 
   pi = new Fragment([
     new State(300, [ new Edge new CharLabel.Single('p'), 301 ])
     new State(301, [ new Edge new CharLabel.Single('i'), 302 ])
-    new State(302, [], 'PI!')
+    new State(302, []).toAcceptable('PI!')
   ]);
 
   hi = new Fragment([
     new State(400, [ new Edge new CharLabel.Single('h'), 401 ])
     new State(401, [ new Edge new CharLabel.Single('i'), 402 ])
-    new State(402, [], 'HI!')
+    new State(402, []).toAcceptable('HI!')
   ]);
 
   describe 'constructor(states)', ->
