@@ -281,10 +281,19 @@ class StateNumSequence {
   }
 
   next() {
+    this._checkRange();
+    return this._next++;
+  }
+
+  peek() {
+    this._checkRange();
+    return this._next;
+  }
+
+  _checkRange() {
     if (this._next > this._origin + 65535) {
       throw `A sequence can only generate 65536 nums: ${this._origin} ~ ${this._origin + 65535}`;
     }
-    return this._next++;
   }
 }
 
