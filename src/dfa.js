@@ -619,7 +619,7 @@ class DFATransition {
     this.session = {};
   }
 
-  transit(input) {
+  move(input) {
     if (this.current === null) {
       throw "This transition has already failed due to illegal structure of the dfa";
     }
@@ -727,7 +727,7 @@ class Parser {
     const trans = this.dfa.startNewTransition();
     let ch;
     while ((ch = this.input.get()) !== null) {
-      if (trans.transit(ch)) {
+      if (trans.move(ch)) {
         continue;
       } else {
         if (trans.isAcceptable()) {

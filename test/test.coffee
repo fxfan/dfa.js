@@ -415,17 +415,17 @@ describe 'NFA', ->
     it 'should create a DFA that is compatible with the original NFA', (done)->
       dfa = nfa.toDFA();
       trans = dfa.startNewTransition();
-      assert.isTrue trans.transit new CharInput('b')
+      assert.isTrue trans.move new CharInput('b')
       assert.isFalse trans.isAcceptable()
-      assert.isTrue trans.transit new CharInput('a')
+      assert.isTrue trans.move new CharInput('a')
       assert.isTrue trans.isAcceptable()
-      assert.isTrue trans.transit new CharInput('a')
+      assert.isTrue trans.move new CharInput('a')
       assert.isTrue trans.isAcceptable()
-      assert.isTrue trans.transit new CharInput('a')
+      assert.isTrue trans.move new CharInput('a')
       assert.isTrue trans.isAcceptable()
-      assert.isTrue trans.transit new CharInput('b')
+      assert.isTrue trans.move new CharInput('b')
       assert.isFalse trans.isAcceptable()
-      assert.isTrue trans.transit new CharInput('a')
+      assert.isTrue trans.move new CharInput('a')
       assert.isTrue trans.isAcceptable()
       assert.strictEqual trans.getAcceptedObject(), 'OK!'
       done();
@@ -556,8 +556,8 @@ describe 'DFA', ->
       assert.isTrue hi.start.edges[0].label.match(new CharInput 'h')
       trans = hi.startNewTransition()
       assert.strictEqual trans.current, hi.start
-      assert.isTrue trans.transit new CharInput('h')
-      assert.isTrue trans.transit new CharInput('i')
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('i')
       assert.isTrue trans.isAcceptable()
       assert.isFalse trans.isEdgeExists()
       assert.strictEqual trans.getAcceptedObject(), 'HI!'
@@ -574,7 +574,7 @@ describe 'DFA', ->
   describe 'Transition#transit(input)', ->
     it 'should transit to state1 with input "a"', (done)->
       trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('a')
+      assert.isTrue trans.move new CharInput('a')
       assert.strictEqual trans.current, state1
       assert.isFalse trans.isAcceptable()
       assert.isFalse trans.isEdgeExists()
@@ -584,7 +584,7 @@ describe 'DFA', ->
       done()
     it 'should transit to state2 with input "b"', (done)->
       trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('b')
+      assert.isTrue trans.move new CharInput('b')
       assert.strictEqual trans.current, state2
       assert.isTrue trans.isAcceptable()
       assert.isFalse trans.isEdgeExists()
@@ -592,7 +592,7 @@ describe 'DFA', ->
       done()
     it 'should transit to state3 with input "c"', (done)->
       trans = dfa.startNewTransition()
-      assert.isTrue trans.transit new CharInput('c')
+      assert.isTrue trans.move new CharInput('c')
       assert.strictEqual trans.current, state3
       assert.isFalse trans.isAcceptable()
       assert.isTrue trans.isEdgeExists()
