@@ -1,6 +1,6 @@
 {
   "name": "dfa.js",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Javascript class library that models DFA(Deterministic Finite Automaton)",
   "main": "dfa.js",
   "directories": {
