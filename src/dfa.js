@@ -248,6 +248,10 @@ class State {
     return new State(this.num, this.edges, this.attrs, true, obj);
   }
 
+  toUnacceptable() {
+    return new State(this.num, this.edges, this.attrs, false, null);
+  }
+
   addEdges(edges) {
     return new State(this.num, this.edges.concat(edges), this.attrs, this.acceptable, this.obj);
   }
@@ -325,6 +329,14 @@ class Fragment {
 
   get headEdges() {
     return this.states[0].edges;
+  }
+
+  toUnacceptable() {
+    return new Fragment(this.states.map(s => s.toUnacceptable()));
+  }
+
+  toLastAcceptable() {
+    return new Fragment(this.init.concat(this.last.toAcceptable()));
   }
 
   concat(o) {

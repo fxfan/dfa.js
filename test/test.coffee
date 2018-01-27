@@ -653,6 +653,47 @@ describe 'Fragment', ->
     it 'should return the last element of states', (done)->
       assert.strictEqual ho.last.num, 102
       done()
+  describe 'toUnacceptable()', ->
+    it 'should create new Fragment in which all states are unacceptable', (done)->
+      frag = ho.concat ge
+      nfa = new NFA()
+      nfa.addStartState new State(0)
+      nfa.appendFragment frag, 0
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('o')
+      assert.isTrue trans.isAcceptable()
+      assert.isTrue trans.move new CharInput('g')
+      assert.isTrue trans.move new CharInput('e')
+      assert.isTrue trans.isAcceptable()
+      frag = frag.toUnacceptable()
+      nfa = new NFA()
+      nfa.addStartState new State(0)
+      nfa.appendFragment frag, 0
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('o')
+      assert.isFalse trans.isAcceptable()
+      assert.isTrue trans.move new CharInput('g')
+      assert.isTrue trans.move new CharInput('e')
+      assert.isFalse trans.isAcceptable()
+      done()
+  describe 'toLastAcceptable()', ->
+    it 'should create new Fragment in which the last state is acceptable', (done)->
+      frag = ho.concat ge
+      frag = frag.toUnacceptable()
+      frag = frag.toLastAcceptable()
+      nfa = new NFA()
+      nfa.addStartState new State(0)
+      nfa.appendFragment frag, 0
+      trans = nfa.startNewTransition()
+      assert.isTrue trans.move new CharInput('h')
+      assert.isTrue trans.move new CharInput('o')
+      assert.isFalse trans.isAcceptable()
+      assert.isTrue trans.move new CharInput('g')
+      assert.isTrue trans.move new CharInput('e')
+      assert.isTrue trans.isAcceptable()
+      done()
   describe 'concat', ->
     frag = ho.concat ge
     nfa = new NFA()
