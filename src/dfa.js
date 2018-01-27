@@ -503,7 +503,7 @@ class NFA {
     return Object.keys(table).reduce((dfa, key)=> {
       const rec = table[key];
       const attrs = rec.states.reduce((attrs, s)=> {
-        Object.keys(s.attrs).reduce((attrs, key)=> {
+        return Object.keys(s.attrs).reduce((attrs, key)=> {
           const values = (attrs[key] === undefined) ? [s.attrs[key]] : attrs[key].concat(s.attrs[key]);
           return Object.assign({}, attrs, { [key]: Object.freeze(values) });
         }, attrs);
