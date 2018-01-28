@@ -479,6 +479,9 @@ class NFA {
       return labels.reduce((table, label)=> {
         const statesKey = DTransRecord.createKey(states);
         const destStates = this.eClosure(this.move(states, label));
+        if (destStates.length === 0) {
+          return table;
+        }
         const destStatesKey = DTransRecord.createKey(destStates);
         if (table[destStatesKey]) {
           const edge = new Edge(label, table[destStatesKey].num);

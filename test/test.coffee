@@ -429,6 +429,42 @@ describe 'NFA', ->
       assert.isTrue trans.isAcceptable()
       assert.strictEqual trans.getAcceptedObject(), 'OK!'
       done();
+    it 'should create a correct DFA when the NFA has complex states structure', (done)->
+      # A NFA that accepts ニャ
+      nfa = new NFA();
+      nfa.addStartState new State 0, [ new Edge(Label.E, 1) ]
+      nfa.addState new State 1, [ new Edge(Label.E, 200), new Edge(Label.E, 300) ]
+      # nya
+      nfa.addState new State 200, [ new Edge(new CharLabel.Single('n'), 201) ], { tail: 'nya' }
+      nfa.addState new State 201, [ new Edge(new CharLabel.Single('y'), 202) ], { tail: 'ya' }
+      nfa.addState new State 202, [ new Edge(new CharLabel.Single('a'), 203) ], { tail: 'a' }
+      nfa.addState new State 203, [ new Edge(Label.E, 1000) ]
+      # ni 
+      nfa.addState new State 300, [ new Edge(new CharLabel.Single('n'), 301) ], { tail: 'ni' }
+      nfa.addState new State 301, [ new Edge(new CharLabel.Single('i'), 302) ], { tail: 'i' }
+      nfa.addState new State 302, [ new Edge(Label.E, 310), new Edge(Label.E, 320) ]
+      # lya, xya
+      nfa.addState new State 310, [ new Edge(new CharLabel.Single('l'), 311) ], { tail: 'lya' }
+      nfa.addState new State 311, [ new Edge(new CharLabel.Single('y'), 312) ], { tail: 'ya' }
+      nfa.addState new State 312, [ new Edge(new CharLabel.Single('a'), 313) ], { tail: 'a' }
+      nfa.addState new State 313, [ new Edge(Label.E, 303) ]
+      nfa.addState new State 320, [ new Edge(new CharLabel.Single('x'), 321) ], { tail: 'xya' }
+      nfa.addState new State 321, [ new Edge(new CharLabel.Single('y'), 322) ], { tail: 'ya' }
+      nfa.addState new State 322, [ new Edge(new CharLabel.Single('a'), 323) ], { tail: 'a' }
+      nfa.addState new State 323, [ new Edge(Label.E, 303) ]
+      nfa.addState new State 303, [ new Edge(Label.E, 1000) ]
+      # accept
+      nfa.addState new State 1000, [], {}, true
+      dfa = nfa.toDFA()
+      trans = dfa.startNewTransition()
+      assert.isFalse trans.move new CharInput 'y'
+      assert.isFalse trans.move new CharInput 'i'
+      assert.isFalse trans.move new CharInput 'a'
+      assert.isFalse trans.move new CharInput 'l'
+      assert.isFalse trans.move new CharInput 'x'
+      assert.isTrue trans.move new CharInput 'n'
+      done()
+
   describe 'startNewTransition()', ->
     it 'should be done successfully', (done)->
       trans = nfa.startNewTransition()
